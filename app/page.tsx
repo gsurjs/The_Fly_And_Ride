@@ -48,7 +48,7 @@ async function AuctionFeed() {
             {/* Image Section */}
             <div className="h-56 bg-black relative overflow-hidden">
               <img 
-                src={bike.image_url || "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?q=80&w=800"} 
+                src={bike.image_url || "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=800"} 
                 alt={`${bike.make} ${bike.model}`}
                 className="object-cover w-full h-full opacity-80 group-hover:scale-105 group-hover:opacity-100 transition-all duration-700"
               />

@@ -132,7 +132,7 @@ export default function BidCard({ listing }: { listing: any }) {
       <div className="relative rounded-3xl overflow-hidden shadow-2xl h-[600px] bg-black">
         <img 
             // We use the real image, OR fallback to the placeholder for old test data
-            src={listing.image_url || "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?q=80&w=800"} 
+            src={listing.image_url || "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=800"} 
             alt={`${listing.make} ${listing.model}`}
             className="object-cover w-full h-full opacity-80 mix-blend-lighten"
           />
