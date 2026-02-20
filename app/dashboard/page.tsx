@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import Link from 'next/link';
 
 async function DashboardContent() {
   const cookieStore = await cookies()
@@ -100,9 +101,9 @@ async function DashboardContent() {
                       <p className="text-[10px] text-white/50 uppercase font-bold tracking-wider mb-1">Location</p>
                       <p className="text-sm font-semibold">{bike.location}</p>
                     </div>
-                    <button className="text-[#ff5a20] text-sm font-bold hover:text-white transition-colors">
+                    <Link href={`/listing/${item.listing_id}`} className="text-[#ff5a20] text-sm font-bold hover:text-white transition-colors">
                       VIEW →
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </div>
