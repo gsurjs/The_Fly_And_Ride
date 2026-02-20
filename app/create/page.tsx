@@ -41,24 +41,46 @@ export default function CreateListing() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // The Client-Side Compression Logic
+  // The Upgraded Client-Side Conversion & Compression Logic
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    let file = e.target.files?.[0];
     if (!file) return;
 
     try {
-      // Configuration to crush the image while maintaining quality
+      // 1. Intercept iPhone HEIC/HEIF files
+      if (file.type === 'image/heic' || file.name.toLowerCase().endsWith('.heic')) {
+        // We dynamically import heic2any inside the function to protect the Next.js SSR build
+        // because heic2any relies on browser window APIs that crash server compilers
+        const heic2any = (await import('heic2any')).default; 
+        
+        const convertedBlob = await heic2any({
+          blob: file,
+          toType: 'image/jpeg',
+          quality: 0.8,
+        });
+        
+        // heic2any can return an array if it's a live photo/sequence; we just grab the first frame
+        const finalBlob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+        
+        // Convert the raw Blob back into a standard JavaScript File object
+        file = new File([finalBlob], file.name.replace(/\.heic$/i, '.jpg'), {
+          type: 'image/jpeg',
+        });
+      }
+
+      // 2. Run our existing cost-saving compression (now guaranteed to receive a standard image format)
       const options = {
-        maxSizeMB: 1, // Compress to max 1MB (keeps your storage costs incredibly low)
-        maxWidthOrHeight: 1920, // Max 1080p resolution
+        maxSizeMB: 1, 
+        maxWidthOrHeight: 1920,
         useWebWorker: true,
       };
       
       const compressedFile = await imageCompression(file, options);
       setImageFile(compressedFile);
-      setImagePreview(URL.createObjectURL(compressedFile)); // Show the user a preview
+      setImagePreview(URL.createObjectURL(compressedFile)); 
+      
     } catch (error) {
-      console.error("Compression error:", error);
+      console.error("Image processing error:", error);
       setErrorMsg("Failed to process image. Please try a different photo.");
     }
   };
@@ -165,7 +187,7 @@ export default function CreateListing() {
             )}
             <input 
               type="file" 
-              accept="image/jpeg, image/png, image/webp" 
+              accept="image/jpeg, image/png, image/webp, .heic" 
               onChange={handleImageChange}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
