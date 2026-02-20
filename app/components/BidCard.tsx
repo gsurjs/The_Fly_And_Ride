@@ -131,10 +131,11 @@ export default function BidCard({ listing }: { listing: any }) {
       {/* LEFT COLUMN: The Motorcycle Image */}
       <div className="relative rounded-3xl overflow-hidden shadow-2xl h-[600px] bg-black">
         <img 
-          src="https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?q=80&w=2070" 
-          alt="Ducati Panigale V4"
-          className="object-cover w-full h-full opacity-90"
-        />
+            // We use the real image, OR fallback to the placeholder for old test data
+            src={listing.image_url || "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?q=80&w=800"} 
+            alt={`${listing.make} ${listing.model}`}
+            className="object-cover w-full h-full opacity-80 mix-blend-lighten"
+          />
         <div className="absolute top-4 left-4 flex gap-2">
           <button className="bg-white/20 backdrop-blur-md p-3 rounded-full hover:bg-white/30 transition text-white">
              ←
