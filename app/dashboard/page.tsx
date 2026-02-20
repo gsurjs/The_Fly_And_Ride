@@ -1,14 +1,12 @@
+import { Suspense } from 'react'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
-export const dynamic = 'force-dynamic';
-
-export default async function Dashboard() {
-  // 1. We must 'await' the cookies in modern Next.js
+// 1. Isolate the secure data fetching into its own async component
+async function DashboardContent() {
   const cookieStore = await cookies()
   
-  // 2. Use the new getAll/setAll pattern required by @supabase/ssr
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -17,24 +15,19 @@ export default async function Dashboard() {
         getAll() {
           return cookieStore.getAll()
         },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options)
-            })
-          } catch {
-            // The setAll method was called from a Server Component.
-            // This can be safely ignored as middleware handles the session refresh.
-          }
+        setAll() {
+          // Ignored in server components
         },
       },
     }
   )
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  
+  if (!user) {
+    redirect('/login')
+  }
 
-  // Fetch their profile data securely from the server
   const { data: profile } = await supabase
     .from('profiles')
     .select('*')
@@ -42,9 +35,9 @@ export default async function Dashboard() {
     .single()
 
   return (
-    <main className="min-h-screen bg-black text-white p-10">
+    <div className="w-full">
       <h1 className="text-4xl font-bold mb-2">Welcome to your Garage</h1>
-      <p className="text-white/50 mb-8">Logged in as: {profile?.username || user.email}</p>
+      <p className="text-white/50 mb-8">Logged in as: <span className="text-white font-bold">{profile?.username || user.email}</span></p>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white/5 border border-white/10 p-6 rounded-2xl">
@@ -60,6 +53,17 @@ export default async function Dashboard() {
           <p className="text-3xl font-extrabold text-white">0</p>
         </div>
       </div>
+    </div>
+  )
+}
+
+// 2. Wrap it in a Suspense boundary for the default page export
+export default function Dashboard() {
+  return (
+    <main className="min-h-screen bg-black text-white p-10 font-sans">
+      <Suspense fallback={<div className="text-white/50 animate-pulse text-xl font-bold tracking-widest uppercase">Unlocking Garage...</div>}>
+        <DashboardContent />
+      </Suspense>
     </main>
   )
 }
