@@ -4,7 +4,6 @@ import { createBrowserClient } from '@supabase/ssr';
 import { useRouter } from 'next/navigation';
 import imageCompression from 'browser-image-compression';
 
-// 1. The Inner Component that does the heavy lifting
 function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: string }> }) {
   const router = useRouter();
   const supabase = createBrowserClient(
@@ -12,7 +11,6 @@ function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: st
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  // Safely unwrap the params inside the Suspense shield
   const resolvedParams = use(paramsPromise);
   const listingId = resolvedParams.id;
 
@@ -21,8 +19,11 @@ function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: st
   const [errorMsg, setErrorMsg] = useState('');
   
   const [listing, setListing] = useState<any>(null);
-  const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
-  const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
+  
+  // Advanced File Management States
+  const [existingGallery, setExistingGallery] = useState<string[]>([]);
+  const [newGalleryFiles, setNewGalleryFiles] = useState<{file: File, preview: string}[]>([]);
+  const [urlsToDelete, setUrlsToDelete] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -40,13 +41,10 @@ function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: st
         return;
       }
 
-      if (data.seller_id !== user.id) {
-        router.push('/dashboard'); 
-        return;
-      }
+      if (data.seller_id !== user.id) return router.push('/dashboard');
 
       setListing(data);
-      setGalleryPreviews(data.gallery_urls || []);
+      setExistingGallery(data.gallery_urls || []);
       setLoading(false);
     };
 
@@ -59,14 +57,14 @@ function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: st
 
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
+    const totalCurrentImages = existingGallery.length + newGalleryFiles.length;
     
-    if (files.length + galleryPreviews.length > 5) {
+    if (files.length + totalCurrentImages > 5) {
       alert("You can only have a maximum of 5 gallery images.");
       return;
     }
 
-    const newCompressedFiles: File[] = [];
-    const newPreviews: string[] = [];
+    const processedFiles: {file: File, preview: string}[] = [];
 
     for (let file of files) {
       try {
@@ -78,15 +76,27 @@ function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: st
         }
 
         const compressedFile = await imageCompression(file, { maxSizeMB: 1, maxWidthOrHeight: 1920 });
-        newCompressedFiles.push(compressedFile);
-        newPreviews.push(URL.createObjectURL(compressedFile));
+        processedFiles.push({
+          file: compressedFile,
+          preview: URL.createObjectURL(compressedFile)
+        });
       } catch (err) {
-        console.error("Compression failed for a file", err);
+        console.error("Compression failed", err);
       }
     }
 
-    setGalleryFiles([...galleryFiles, ...newCompressedFiles]);
-    setGalleryPreviews([...galleryPreviews, ...newPreviews]);
+    setNewGalleryFiles([...newGalleryFiles, ...processedFiles]);
+  };
+
+  // NEW: Delete an existing database image
+  const handleRemoveExisting = (urlToRemove: string) => {
+    setExistingGallery(existingGallery.filter(url => url !== urlToRemove));
+    setUrlsToDelete([...urlsToDelete, urlToRemove]); // Queue it for deletion from bucket
+  };
+
+  // NEW: Delete a newly selected image before saving
+  const handleRemoveNew = (indexToRemove: number) => {
+    setNewGalleryFiles(newGalleryFiles.filter((_, idx) => idx !== indexToRemove));
   };
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -95,35 +105,40 @@ function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: st
     setErrorMsg('');
 
     try {
-      // 1. Strict Auth Check
       const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) throw new Error("Authentication failed. Please log in again.");
+      if (authError || !user) throw new Error("Authentication failed.");
 
-      let finalGalleryUrls = [...(listing.gallery_urls || [])];
-
-      // 2. Safe Upload Sequence
-      if (galleryFiles.length > 0) {
-        for (const file of galleryFiles) {
-          // Safeguard against the compression library occasionally dropping the filename
-          const originalName = file.name || 'gallery-image.jpg';
-          const fileExt = originalName.split('.').pop();
-          const fileName = `${user.id}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-          
-          const { error: uploadError } = await supabase.storage
-            .from('motorcycles')
-            .upload(fileName, file);
-
-          if (uploadError) {
-            console.error("Supabase Storage Error:", uploadError);
-            throw new Error(`Failed to upload an image: ${uploadError.message}`);
+      // 1. Cost-Saving Step: Delete the removed images from the Supabase Bucket
+      if (urlsToDelete.length > 0) {
+        for (const url of urlsToDelete) {
+          if (url.includes('/motorcycles/')) {
+            const fileName = url.split('/motorcycles/').pop();
+            if (fileName) {
+              await supabase.storage.from('motorcycles').remove([fileName]);
+            }
           }
-
-          const { data } = supabase.storage.from('motorcycles').getPublicUrl(fileName);
-          finalGalleryUrls.push(data.publicUrl);
         }
       }
 
-      // 3. Database Transaction
+      // 2. Upload any brand new images
+      let uploadedNewUrls: string[] = [];
+      if (newGalleryFiles.length > 0) {
+        for (const item of newGalleryFiles) {
+          const fileExt = item.file.name.split('.').pop() || 'jpg';
+          const fileName = `${user.id}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+          
+          const { error: uploadError } = await supabase.storage.from('motorcycles').upload(fileName, item.file);
+          if (uploadError) throw new Error(`Failed to upload an image: ${uploadError.message}`);
+
+          const { data } = supabase.storage.from('motorcycles').getPublicUrl(fileName);
+          uploadedNewUrls.push(data.publicUrl);
+        }
+      }
+
+      // 3. Combine remaining existing images with newly uploaded ones
+      const finalGalleryUrls = [...existingGallery, ...uploadedNewUrls];
+
+      // 4. Update the Database
       const { error: dbError } = await supabase
         .from('listings')
         .update({
@@ -134,24 +149,19 @@ function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: st
         })
         .eq('id', listingId);
 
-      if (dbError) {
-        console.error("PostgreSQL Error:", dbError);
-        throw new Error(`Database update failed: ${dbError.message}`);
-      }
+      if (dbError) throw new Error(`Database update failed: ${dbError.message}`);
 
-      // 4. Successful Routing
       router.push(`/listing/${listingId}`);
       router.refresh();
 
     } catch (err: any) {
-      // 5. The Safety Net: Catch the crash, show the user, and unlock the button
       console.error("Sequence Failed:", err);
-      setErrorMsg(err.message || "An unexpected error occurred during the update.");
+      setErrorMsg(err.message || "An unexpected error occurred.");
       setSaving(false); 
     }
   };
 
-  if (loading) return null; // Let the Suspense fallback handle the initial load state
+  if (loading) return null;
 
   return (
     <div className="w-full max-w-3xl bg-black/80 p-8 md:p-12 rounded-3xl border border-white/10 shadow-2xl backdrop-blur-md mt-10 mb-10">
@@ -185,15 +195,42 @@ function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: st
         </div>
 
         <div>
-          <h3 className="text-lg font-bold mb-4">Gallery Images ({galleryPreviews.length}/5)</h3>
+          <h3 className="text-lg font-bold mb-4">Gallery Images ({(existingGallery.length + newGalleryFiles.length)}/5)</h3>
           <div className="grid grid-cols-3 gap-4 mb-4">
-            {galleryPreviews.map((src, idx) => (
-              <div key={idx} className="h-24 bg-black rounded-xl border border-white/20 overflow-hidden">
-                <img src={src} alt="Gallery Preview" className="w-full h-full object-cover" />
+            
+            {/* Render Existing Images with Delete Buttons */}
+            {existingGallery.map((url, idx) => (
+              <div key={`existing-${idx}`} className="relative h-24 bg-black rounded-xl border border-white/20 overflow-hidden group">
+                <img src={url} alt="Gallery Preview" className="w-full h-full object-cover" />
+                <button 
+                  type="button"
+                  onClick={() => handleRemoveExisting(url)}
+                  className="absolute top-1 right-1 bg-red-500/80 hover:bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  X
+                </button>
+              </div>
+            ))}
+
+            {/* Render Newly Selected Images with Delete Buttons */}
+            {newGalleryFiles.map((item, idx) => (
+              <div key={`new-${idx}`} className="relative h-24 bg-black rounded-xl border border-[#ff5a20]/50 overflow-hidden group">
+                <img src={item.preview} alt="New Preview" className="w-full h-full object-cover opacity-70" />
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                   <span className="text-[10px] font-bold bg-black/60 px-2 py-1 rounded">NEW</span>
+                </div>
+                <button 
+                  type="button"
+                  onClick={() => handleRemoveNew(idx)}
+                  className="absolute top-1 right-1 bg-red-500/80 hover:bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto"
+                >
+                  X
+                </button>
               </div>
             ))}
             
-            {galleryPreviews.length < 5 && (
+            {/* Upload Button */}
+            {(existingGallery.length + newGalleryFiles.length) < 5 && (
               <div className="h-24 border-2 border-dashed border-white/20 rounded-xl flex items-center justify-center relative hover:border-[#ff5a20] transition-colors group cursor-pointer">
                 <p className="text-white/50 text-2xl group-hover:text-[#ff5a20]">+</p>
                 <input 
@@ -206,7 +243,7 @@ function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: st
               </div>
             )}
           </div>
-          <p className="text-xs text-white/50 font-bold uppercase tracking-wider">Upload up to 5 additional details photos.</p>
+          <p className="text-xs text-white/50 font-bold uppercase tracking-wider">Upload or remove detail photos.</p>
         </div>
 
         <div className="pt-6">
@@ -219,7 +256,6 @@ function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: st
   );
 }
 
-// 2. The Top-Level Page that protects the build with a Suspense boundary
 export default function EditListingPage({ params }: { params: Promise<{ id: string }> }) {
   return (
     <main className="min-h-screen bg-[#6b2a1a] p-4 md:p-10 font-sans flex justify-center">
