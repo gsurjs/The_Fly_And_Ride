@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import BidCard from '../../components/BidCard'; 
+import CommentsSection from '../../components/CommentsSection'; // 1. Imported the new Q&A component
 import { Suspense } from 'react';
 
 interface PageProps {
@@ -36,14 +37,20 @@ async function ListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: 
     notFound(); 
   }
 
-  return <BidCard listing={listing} />;
+  // 3. Stack the BidCard and the new CommentsSection vertically
+  return (
+    <div className="w-full flex flex-col items-center gap-12">
+      <BidCard listing={listing} />
+      <CommentsSection listingId={listing.id} sellerId={listing.seller_id} />
+    </div>
+  );
 }
 
-// 3. Keep the top-level page completely synchronous
+// 4. Keep the top-level page completely synchronous
 export default function ListingPage({ params }: PageProps) {
   return (
-    <main className="min-h-screen bg-black p-4 md:p-10 flex items-center justify-center font-sans">
-      <Suspense fallback={<div className="text-white text-xl animate-pulse font-bold tracking-widest uppercase">Fetching Motorcycle Data...</div>}>
+    <main className="min-h-screen bg-black p-4 md:p-10 flex flex-col items-center font-sans">
+      <Suspense fallback={<div className="text-white text-xl animate-pulse font-bold tracking-widest uppercase mt-20">Fetching Motorcycle Data...</div>}>
         {/* Pass the Promise directly into the shielded component */}
         <ListingContent paramsPromise={params} />
       </Suspense>
