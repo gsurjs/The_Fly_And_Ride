@@ -22,6 +22,16 @@ export default function BidCard({ listing }: { listing: any }) {
   const [isWatchlisted, setIsWatchlisted] = useState(false);
   const [isWatchlistLoading, setIsWatchlistLoading] = useState(false);
 
+  // Image Gallery State
+  const fallbackImage = "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=800";
+  const [activeImage, setActiveImage] = useState(listing.image_url || fallbackImage);
+  
+  // Combine the primary image and the gallery array into one list
+  const allImages = [
+    listing.image_url || fallbackImage,
+    ...(listing.gallery_urls || [])
+  ];
+
   // Dummy market data for the chart
   const marketData = [
     { month: 'Aug', price: 19500 }, { month: 'Sep', price: 21000 }, 
@@ -167,15 +177,37 @@ export default function BidCard({ listing }: { listing: any }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl w-full">
       
-      {/* LEFT COLUMN: The Motorcycle Image */}
-      <div className="relative rounded-3xl overflow-hidden shadow-2xl h-[600px] bg-black border border-white/10">
-        <img 
-            src={listing.image_url || "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=800"} 
+      {/* LEFT COLUMN: The Motorcycle Image Gallery */}
+      <div className="relative rounded-3xl overflow-hidden shadow-2xl h-[600px] bg-black border border-white/10 flex flex-col group">
+        
+        {/* The Main Active Image */}
+        <div className="flex-1 relative overflow-hidden">
+          <img 
+            src={activeImage} 
             alt={`${listing.make} ${listing.model}`}
-            className="object-cover w-full h-full opacity-80 mix-blend-lighten"
+            className="object-cover w-full h-full opacity-90 transition-opacity duration-300"
           />
+        </div>
+
+        {/* The Thumbnail Strip (Only visible if there are multiple images) */}
+        {allImages.length > 1 && (
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 bg-black/60 backdrop-blur-md p-3 rounded-2xl border border-white/10 shadow-2xl">
+            {allImages.map((img, idx) => (
+              <button 
+                key={idx}
+                onClick={() => setActiveImage(img)}
+                className={`relative w-16 h-16 rounded-xl overflow-hidden border-2 transition-all duration-200 ${
+                  activeImage === img ? 'border-[#ff5a20] scale-110 shadow-lg shadow-[#ff5a20]/20' : 'border-transparent opacity-50 hover:opacity-100'
+                }`}
+              >
+                <img src={img} alt={`Thumbnail ${idx + 1}`} className="object-cover w-full h-full" />
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="absolute top-4 left-4 flex gap-2">
-          <button className="bg-black/50 border border-white/10 backdrop-blur-md p-3 rounded-full hover:bg-white/20 transition text-white">
+          <button onClick={() => window.history.back()} className="bg-black/50 border border-white/10 backdrop-blur-md p-3 rounded-full hover:bg-white/20 transition text-white">
              ←
           </button>
         </div>
