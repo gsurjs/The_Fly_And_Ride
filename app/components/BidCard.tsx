@@ -1,13 +1,21 @@
 'use client'; 
 import { useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize the Supabase client for the browser
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function BidCard({ listing }: { listing: any }) {
   const [timeLeft, setTimeLeft] = useState('Calculating...');
+  const [currentBid, setCurrentBid] = useState(listing.reserve_price || 0);
+  const [isBidding, setIsBidding] = useState(false);
 
   useEffect(() => {
+    // 1. The Countdown Timer
     const timer = setInterval(() => {
       const difference = new Date(listing.ends_at).getTime() - new Date().getTime();
-      
       if (difference > 0) {
         const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
         const minutes = Math.floor((difference / 1000 / 60) % 60);
@@ -19,8 +27,50 @@ export default function BidCard({ listing }: { listing: any }) {
       }
     }, 1000);
 
-    return () => clearInterval(timer); // Cleanup memory when navigating away
-  }, [listing.ends_at]);
+    // 2. The WebSocket Listener for Live Bids
+    const channel = supabase
+      .channel('live-bids')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'bids', filter: `listing_id=eq.${listing.id}` },
+        (payload) => {
+          // When a new bid hits the database, instantly update the UI
+          console.log("New bid received!", payload.new);
+          setCurrentBid(payload.new.amount);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      clearInterval(timer);
+      supabase.removeChannel(channel);
+    };
+  }, [listing.ends_at, listing.id]);
+
+  // 3. The Action: Placing a Bid
+  const handlePlaceBid = async () => {
+    setIsBidding(true);
+    const newBidAmount = currentBid + 250; // Standard $250 bid increment
+
+    // Insert the new bid into the ledger
+    const { error } = await supabase
+      .from('bids')
+      .insert([
+        { 
+          listing_id: listing.id, 
+          amount: newBidAmount,
+          // We will need to pass the actual logged-in user's ID here soon
+          // bidder_id: '...' 
+        }
+      ]);
+
+    if (error) {
+      console.error("Error placing bid:", error.message);
+      alert("Failed to place bid. Check console.");
+    }
+    
+    setIsBidding(false);
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl w-full">
@@ -56,8 +106,11 @@ export default function BidCard({ listing }: { listing: any }) {
         {/* Market Value & Bid Section */}
         <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
           <div className="flex justify-between items-center mb-10">
-            <span className="text-xs font-bold text-white/50 tracking-widest uppercase">:: Market Value History</span>
-            <span className="bg-white/10 px-3 py-1 rounded-md text-sm font-semibold">$24,500 AVG</span>
+            <span className="text-xs font-bold text-white/50 tracking-widest uppercase">:: Current Top Bid</span>
+            {/* Display the live bid state here */}
+            <span className="bg-white/10 px-3 py-1 rounded-md text-xl font-bold text-[#ff5a20]">
+              ${currentBid.toLocaleString()}
+            </span>
           </div>
           
           {/* Chart Placeholder */}
@@ -72,8 +125,13 @@ export default function BidCard({ listing }: { listing: any }) {
                 <button className="bg-white/90 text-black text-sm font-bold px-4 py-2 rounded-full mr-3">View Data</button>
                 <span className="text-xs text-white/50 font-semibold tracking-wide">LAST 6 MONTHS</span>
              </div>
-             <button className="bg-[#ff5a20] hover:bg-[#ff4500] transition-colors text-white font-bold px-8 py-3 rounded-xl shadow-lg shadow-[#ff5a20]/20">
-               PLACE BID
+             {/* The Place Bid Button */}
+             <button 
+                onClick={handlePlaceBid}
+                disabled={isBidding}
+                className="bg-[#ff5a20] hover:bg-[#ff4500] disabled:opacity-50 transition-colors text-white font-bold px-8 py-3 rounded-xl shadow-lg shadow-[#ff5a20]/20"
+              >
+               {isBidding ? 'SENDING...' : 'PLACE BID'}
              </button>
           </div>
         </div>
@@ -94,7 +152,6 @@ export default function BidCard({ listing }: { listing: any }) {
           </div>
           <div>
             <p className="text-[10px] text-white/50 uppercase font-bold tracking-wider mb-1">Ends In</p>
-            {/* The timer state is injected here */}
             <p className="font-bold text-lg text-[#ff5a20] tabular-nums">{timeLeft}</p>
           </div>
         </div>
