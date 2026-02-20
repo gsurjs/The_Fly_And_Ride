@@ -80,7 +80,7 @@ async function DashboardContent() {
                 {/* Image Placeholder */}
                 <div className="h-48 bg-black relative overflow-hidden">
                   <img 
-                    src="https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?q=80&w=800" 
+                    src={bike.image_url || "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?q=80&w=800"} 
                     alt={`${bike.make} ${bike.model}`}
                     className="object-cover w-full h-full opacity-80 group-hover:scale-105 transition-transform duration-500"
                   />
