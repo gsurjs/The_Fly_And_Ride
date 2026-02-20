@@ -12,8 +12,10 @@ export default function CreateListing() {
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  
+  // 1. Add a static state for the max allowed year to satisfy the server build
+  const [maxYear, setMaxYear] = useState(2027); 
 
-  // 1. Initialize with a static value to satisfy the strict server compiler
   const [formData, setFormData] = useState({
     make: '',
     model: '',
@@ -25,9 +27,11 @@ export default function CreateListing() {
     duration_days: 7,
   });
 
-  // 2. Safely inject the dynamic date ONLY after the browser has hydrated the page
+  // 2. Safely calculate the dynamic dates ONLY after the browser loads
   useEffect(() => {
-    setFormData((prev) => ({ ...prev, year: new Date().getFullYear() }));
+    const currentYear = new Date().getFullYear();
+    setFormData((prev) => ({ ...prev, year: currentYear }));
+    setMaxYear(currentYear + 1); // Safely sets the max year to next year
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -47,8 +51,6 @@ export default function CreateListing() {
       return;
     }
 
-    // Note: new Date() is perfectly safe here because handleSubmit is an event 
-    // handler triggered by a click, meaning it only ever runs in the browser.
     const endsAt = new Date();
     endsAt.setDate(endsAt.getDate() + Number(formData.duration_days));
 
@@ -104,8 +106,8 @@ export default function CreateListing() {
 
             <div>
               <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Year</label>
-              {/* Added a dynamic max attribute to prevent future dates, safely read from the browser */}
-              <input required name="year" type="number" min="1900" max={new Date().getFullYear() + 1} value={formData.year} onChange={handleChange}
+              {/* 3. Swap the dynamic Date call for the safe state variable */}
+              <input required name="year" type="number" min="1900" max={maxYear} value={formData.year} onChange={handleChange}
                 className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-[#ff5a20] transition-colors" />
             </div>
             <div>
