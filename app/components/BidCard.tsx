@@ -1,6 +1,7 @@
 'use client'; 
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { BarChart, Bar, ResponsiveContainer, Tooltip, Cell } from 'recharts';
 
 // Initialize the Supabase client for the browser
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -8,9 +9,18 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function BidCard({ listing }: { listing: any }) {
+
   const [timeLeft, setTimeLeft] = useState('Calculating...');
   const [currentBid, setCurrentBid] = useState(listing.reserve_price || 0);
   const [isBidding, setIsBidding] = useState(false);
+
+  // Dummy data representing the last 6 months of Ducati Panigale sales
+  const marketData = [
+    { month: 'Aug', price: 19500 }, { month: 'Sep', price: 21000 }, 
+    { month: 'Oct', price: 20500 }, { month: 'Nov', price: 22500 },
+    { month: 'Dec', price: 23000 }, { month: 'Jan', price: 24500 },
+    { month: 'Feb', price: 24000 }
+  ];
 
   useEffect(() => {
     // 1. The Countdown Timer
@@ -122,11 +132,37 @@ export default function BidCard({ listing }: { listing: any }) {
             </span>
           </div>
           
-          {/* Chart Placeholder */}
-          <div className="h-24 flex items-end gap-2 mb-6 opacity-60">
-            {[40, 60, 50, 80, 70, 90, 85, 95, 60, 50, 70].map((h, i) => (
-              <div key={i} className="flex-1 bg-gradient-to-t from-white/10 to-white/40 rounded-t-sm" style={{ height: `${h}%` }}></div>
-            ))}
+          {/* Interactive Market Value Chart */}
+          <div className="h-28 w-full mb-6">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={marketData}>
+                {/* Define the SVG Gradient so it looks exactly like the mockup */}
+                <defs>
+                  <linearGradient id="barGradient" x1="0" y1="1" x2="0" y2="0">
+                    <stop offset="0%" stopColor="#ffffff" stopOpacity={0.1} />
+                    <stop offset="100%" stopColor="#ffffff" stopOpacity={0.5} />
+                  </linearGradient>
+                </defs>
+
+                {/* Custom Tooltip on Hover */}
+                <Tooltip 
+                  cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      return (
+                        <div className="bg-black/90 border border-white/20 p-3 rounded-lg shadow-xl backdrop-blur-md">
+                          <p className="text-[#ff5a20] font-bold">${payload[0].value?.toLocaleString()}</p>
+                          <p className="text-white/50 text-xs uppercase tracking-wider">{payload[0].payload.month}</p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                {/* Apply the gradient fill here */}
+                <Bar dataKey="price" radius={[4, 4, 0, 0]} fill="url(#barGradient)" />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
 
           <div className="flex justify-between items-center">
