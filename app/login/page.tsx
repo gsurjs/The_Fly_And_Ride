@@ -1,11 +1,7 @@
 'use client';
 import { useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { createBrowserClient } from '@supabase/ssr';
+import { useRouter } from 'next/navigation';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -13,6 +9,15 @@ export default function Login() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  
+  // 1. Initialize the Next.js App Router
+  const router = useRouter();
+
+  // 2. Use the SSR-compatible browser client to automatically map tokens to secure Cookies
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,8 +30,13 @@ export default function Login() {
       else setMessage('Success! Check your email to confirm your account.');
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) setMessage(error.message);
-      else window.location.href = '/dashboard'; // Send them straight to their new dashboard
+      if (error) {
+        setMessage(error.message);
+      } else {
+        // 3. Navigate to dashboard and force the server to read the new secure cookies
+        router.push('/dashboard');
+        router.refresh(); 
+      }
     }
     setLoading(false);
   };
@@ -50,7 +60,7 @@ export default function Login() {
           className="w-full bg-white/5 border border-white/10 rounded-xl p-3 mb-8 focus:outline-none focus:border-[#ff5a20]" required
         />
 
-        <button type="submit" disabled={loading} className="w-full bg-[#ff5a20] hover:bg-[#ff4500] text-white font-bold py-3 rounded-xl shadow-lg mb-4">
+        <button type="submit" disabled={loading} className="w-full bg-[#ff5a20] hover:bg-[#ff4500] text-white font-bold py-3 rounded-xl shadow-lg mb-4 transition-colors">
           {loading ? 'PROCESSING...' : (isSignUp ? 'SIGN UP' : 'SIGN IN')}
         </button>
 
