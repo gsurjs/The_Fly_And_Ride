@@ -50,23 +50,32 @@ export default function BidCard({ listing }: { listing: any }) {
   // 3. The Action: Placing a Bid
   const handlePlaceBid = async () => {
     setIsBidding(true);
+
+    // Grab the secure session from the browser
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    
+    if (authError || !session) {
+      alert("You must be logged in to place a bid.");
+      window.location.href = '/login';
+      return;
+    }
+
     const newBidAmount = currentBid + 250; // Standard $250 bid increment
 
-    // Insert the new bid into the ledger
+    // Insert the actual authenticated user's ID
     const { error } = await supabase
       .from('bids')
       .insert([
         { 
           listing_id: listing.id, 
           amount: newBidAmount,
-          // We will need to pass the actual logged-in user's ID here soon
-          // bidder_id: '...' 
+          bidder_id: session.user.id 
         }
       ]);
 
     if (error) {
-      console.error("Error placing bid:", error.message);
-      alert("Failed to place bid. Check console.");
+      console.error("Database rejected transaction:", error.message);
+      alert("Failed to place bid. Ensure you aren't bidding on your own listing.");
     }
     
     setIsBidding(false);
