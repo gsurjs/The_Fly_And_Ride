@@ -178,26 +178,31 @@ export default function BidCard({ listing }: { listing: any }) {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl w-full">
       
       {/* LEFT COLUMN: The Motorcycle Image Gallery */}
-      <div className="relative rounded-3xl overflow-hidden shadow-2xl h-[600px] bg-black border border-white/10 flex flex-col group">
+      <div className="flex flex-col gap-4">
         
-        {/* The Main Active Image */}
-        <div className="flex-1 relative overflow-hidden">
+        {/* The Main Active Image (Now slightly shorter to make room for thumbnails) */}
+        <div className="relative rounded-3xl overflow-hidden shadow-2xl h-[500px] bg-black border border-white/10 group">
           <img 
             src={activeImage} 
             alt={`${listing.make} ${listing.model}`}
             className="object-cover w-full h-full opacity-90 transition-opacity duration-300"
           />
+          <div className="absolute top-4 left-4 flex gap-2">
+            <button onClick={() => window.history.back()} className="bg-black/50 border border-white/10 backdrop-blur-md p-3 rounded-full hover:bg-white/20 transition text-white shadow-lg">
+               ←
+            </button>
+          </div>
         </div>
 
-        {/* The Thumbnail Strip (Only visible if there are multiple images) */}
+        {/* The Thumbnail Strip (Now safely below the image) */}
         {allImages.length > 1 && (
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 bg-black/60 backdrop-blur-md p-3 rounded-2xl border border-white/10 shadow-2xl">
+          <div className="flex gap-3 overflow-x-auto py-2 custom-scrollbar">
             {allImages.map((img, idx) => (
               <button 
                 key={idx}
                 onClick={() => setActiveImage(img)}
-                className={`relative w-16 h-16 rounded-xl overflow-hidden border-2 transition-all duration-200 ${
-                  activeImage === img ? 'border-[#ff5a20] scale-110 shadow-lg shadow-[#ff5a20]/20' : 'border-transparent opacity-50 hover:opacity-100'
+                className={`flex-shrink-0 relative w-24 h-24 rounded-2xl overflow-hidden border-2 transition-all duration-200 ${
+                  activeImage === img ? 'border-[#ff5a20] scale-105 shadow-xl shadow-[#ff5a20]/20 z-10' : 'border-transparent opacity-50 hover:opacity-100'
                 }`}
               >
                 <img src={img} alt={`Thumbnail ${idx + 1}`} className="object-cover w-full h-full" />
@@ -205,12 +210,6 @@ export default function BidCard({ listing }: { listing: any }) {
             ))}
           </div>
         )}
-
-        <div className="absolute top-4 left-4 flex gap-2">
-          <button onClick={() => window.history.back()} className="bg-black/50 border border-white/10 backdrop-blur-md p-3 rounded-full hover:bg-white/20 transition text-white">
-             ←
-          </button>
-        </div>
       </div>
 
       {/* RIGHT COLUMN: The Bidding Interface */}
