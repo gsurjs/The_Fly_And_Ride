@@ -11,7 +11,7 @@ const defaultUrl = process.env.VERCEL_URL
 // Updated the metadata to reflect your brand instead of the starter kit defaults
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "MotoAuction | Premium Motorcycle Bidding",
+  title: "Fly&Ride | Premium Motorcycle Bidding",
   description: "Securely buy and sell exclusive motorcycles.",
 };
 

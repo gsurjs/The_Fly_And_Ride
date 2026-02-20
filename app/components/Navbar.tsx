@@ -25,7 +25,7 @@ export default async function Navbar() {
         
         {/* Brand Logo */}
         <Link href="/" className="text-2xl font-extrabold text-white tracking-tighter">
-          MOTO<span className="text-[#ff5a20]">AUCTION</span>
+          FLY&<span className="text-[#ff5a20]">RIDE</span>
         </Link>
 
         {/* Dynamic Navigation Links */}
