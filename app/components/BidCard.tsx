@@ -1,9 +1,8 @@
 'use client'; 
 import { useState, useEffect } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
-import { BarChart, Bar, ResponsiveContainer, Tooltip, Cell } from 'recharts';
+import { BarChart, Bar, ResponsiveContainer, Tooltip } from 'recharts';
 
-// 1. Upgrade to the SSR-compatible browser client to read secure cookies
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -13,6 +12,11 @@ export default function BidCard({ listing }: { listing: any }) {
   const [timeLeft, setTimeLeft] = useState('Calculating...');
   const [currentBid, setCurrentBid] = useState(listing.reserve_price || 0);
   const [isBidding, setIsBidding] = useState(false);
+  
+  // New State for Custom Bid Input & Validation Messages
+  const [bidInput, setBidInput] = useState<number | ''>('');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   
   // Watchlist State
   const [isWatchlisted, setIsWatchlisted] = useState(false);
@@ -27,7 +31,22 @@ export default function BidCard({ listing }: { listing: any }) {
   ];
 
   useEffect(() => {
-    // Check initial Watchlist state if a user is logged in
+    // 1. Fetch initial high bid (in case there are already bids in the DB)
+    const fetchInitialBid = async () => {
+      const { data } = await supabase
+        .from('bids')
+        .select('amount')
+        .eq('listing_id', listing.id)
+        .order('amount', { ascending: false })
+        .limit(1);
+        
+      if (data && data.length > 0) {
+        setCurrentBid(data[0].amount);
+      }
+    };
+    fetchInitialBid();
+
+    // 2. Check initial Watchlist state
     const checkWatchlistStatus = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -41,10 +60,9 @@ export default function BidCard({ listing }: { listing: any }) {
         if (data) setIsWatchlisted(true);
       }
     };
-    
     checkWatchlistStatus();
 
-    // The Countdown Timer
+    // 3. The Countdown Timer
     const timer = setInterval(() => {
       const difference = new Date(listing.ends_at).getTime() - new Date().getTime();
       if (difference > 0) {
@@ -58,13 +76,17 @@ export default function BidCard({ listing }: { listing: any }) {
       }
     }, 1000);
 
-    // The WebSocket Listener for Live Bids
+    // 4. The WebSocket Listener for Live Bids (Keeps your page updating without refresh!)
     const channel = supabase
       .channel('live-bids')
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'bids', filter: `listing_id=eq.${listing.id}` },
-        (payload) => setCurrentBid(payload.new.amount)
+        (payload) => {
+          setCurrentBid(payload.new.amount);
+          // If someone else bids, clear any success message we have
+          setSuccessMsg(''); 
+        }
       )
       .subscribe();
 
@@ -74,8 +96,25 @@ export default function BidCard({ listing }: { listing: any }) {
     };
   }, [listing.ends_at, listing.id]);
 
+  // The Upgraded Bidding Engine
   const handlePlaceBid = async () => {
+    setErrorMsg('');
+    setSuccessMsg('');
     setIsBidding(true);
+
+    if (timeLeft === 'Auction Ended') {
+      setErrorMsg("This auction has concluded.");
+      setIsBidding(false);
+      return;
+    }
+
+    const numericBid = Number(bidInput);
+    if (!numericBid || numericBid <= currentBid) {
+      setErrorMsg(`Bid must be greater than $${currentBid.toLocaleString()}`);
+      setIsBidding(false);
+      return;
+    }
+
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (authError || !user) {
@@ -84,19 +123,27 @@ export default function BidCard({ listing }: { listing: any }) {
       return;
     }
 
-    const newBidAmount = currentBid + 250; 
+    if (user.id === listing.seller_id) {
+      setErrorMsg("You cannot bid on your own listing.");
+      setIsBidding(false);
+      return;
+    }
+
     const { error } = await supabase
       .from('bids')
-      .insert([{ listing_id: listing.id, amount: newBidAmount, bidder_id: user.id }]);
+      .insert([{ listing_id: listing.id, amount: numericBid, bidder_id: user.id }]);
 
     if (error) {
       console.error("Database rejected transaction:", error.message);
-      alert("Failed to place bid. Ensure you aren't bidding on your own listing.");
+      setErrorMsg("Transaction failed. Please try again.");
+    } else {
+      setSuccessMsg("Bid placed successfully!");
+      setBidInput(''); // Clear the input field
     }
+    
     setIsBidding(false);
   };
 
-  // 2. The Watchlist Action
   const toggleWatchlist = async () => {
     setIsWatchlistLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
@@ -108,18 +155,10 @@ export default function BidCard({ listing }: { listing: any }) {
     }
 
     if (isWatchlisted) {
-      // Remove from database
-      await supabase
-        .from('watchlist')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('listing_id', listing.id);
+      await supabase.from('watchlist').delete().eq('user_id', user.id).eq('listing_id', listing.id);
       setIsWatchlisted(false);
     } else {
-      // Add to database
-      await supabase
-        .from('watchlist')
-        .insert([{ user_id: user.id, listing_id: listing.id }]);
+      await supabase.from('watchlist').insert([{ user_id: user.id, listing_id: listing.id }]);
       setIsWatchlisted(true);
     }
     setIsWatchlistLoading(false);
@@ -129,15 +168,14 @@ export default function BidCard({ listing }: { listing: any }) {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl w-full">
       
       {/* LEFT COLUMN: The Motorcycle Image */}
-      <div className="relative rounded-3xl overflow-hidden shadow-2xl h-[600px] bg-black">
+      <div className="relative rounded-3xl overflow-hidden shadow-2xl h-[600px] bg-black border border-white/10">
         <img 
-            // We use the real image, OR fallback to the placeholder for old test data
             src={listing.image_url || "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=800"} 
             alt={`${listing.make} ${listing.model}`}
             className="object-cover w-full h-full opacity-80 mix-blend-lighten"
           />
         <div className="absolute top-4 left-4 flex gap-2">
-          <button className="bg-white/20 backdrop-blur-md p-3 rounded-full hover:bg-white/30 transition text-white">
+          <button className="bg-black/50 border border-white/10 backdrop-blur-md p-3 rounded-full hover:bg-white/20 transition text-white">
              ←
           </button>
         </div>
@@ -146,7 +184,7 @@ export default function BidCard({ listing }: { listing: any }) {
       {/* RIGHT COLUMN: The Bidding Interface */}
       <div className="flex flex-col text-white space-y-6">
         
-        {/* Header with new Watchlist Button */}
+        {/* Header with Watchlist Button */}
         <div>
           <div className="flex justify-between items-start mb-2">
             <p className="text-white/60 text-sm tracking-wider uppercase font-semibold">Back to Garage</p>
@@ -163,10 +201,10 @@ export default function BidCard({ listing }: { listing: any }) {
             </button>
           </div>
           <h1 className="text-5xl font-extrabold tracking-tight mb-4">
-            {listing.make} <br /> {listing.model}
+            {listing.make} <br /> <span className="text-[#ff5a20]">{listing.model}</span>
           </h1>
           <p className="text-sm text-white/80 leading-relaxed">
-            <span className="text-[#ff5a20] font-bold">FUN FACT:</span> This specific model was the first street bike to feature the Desmosedici Stradale engine, derived directly from MotoGP.
+            <span className="text-white font-bold">INFO:</span> This unit comes with a {listing.title_status.toLowerCase()} title and is currently located in {listing.location}.
           </p>
         </div>
 
@@ -174,7 +212,7 @@ export default function BidCard({ listing }: { listing: any }) {
         <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
           <div className="flex justify-between items-center mb-10">
             <span className="text-xs font-bold text-white/50 tracking-widest uppercase">:: Current Top Bid</span>
-            <span className="bg-white/10 px-3 py-1 rounded-md text-xl font-bold text-[#ff5a20]">
+            <span className="bg-white/10 px-4 py-2 rounded-md text-3xl font-bold text-[#ff5a20]">
               ${currentBid.toLocaleString()}
             </span>
           </div>
@@ -208,18 +246,36 @@ export default function BidCard({ listing }: { listing: any }) {
             </ResponsiveContainer>
           </div>
 
-          <div className="flex justify-between items-center">
-             <div>
-                <button className="bg-white/90 text-black text-sm font-bold px-4 py-2 rounded-full mr-3">View Data</button>
-                <span className="text-xs text-white/50 font-semibold tracking-wide">LAST 6 MONTHS</span>
-             </div>
-             <button 
-                onClick={handlePlaceBid}
-                disabled={isBidding}
-                className="bg-[#ff5a20] hover:bg-[#ff4500] disabled:opacity-50 transition-colors text-white font-bold px-8 py-3 rounded-xl shadow-lg shadow-[#ff5a20]/20"
-              >
-               {isBidding ? 'SENDING...' : 'PLACE BID'}
-             </button>
+          <div className="flex flex-col gap-3">
+            {/* Real-time Status Messages */}
+            {errorMsg && <p className="text-red-400 text-xs font-bold text-right uppercase tracking-wider">{errorMsg}</p>}
+            {successMsg && <p className="text-green-400 text-xs font-bold text-right uppercase tracking-wider">{successMsg}</p>}
+            
+            <div className="flex justify-between items-center">
+               <div>
+                  <button className="bg-white/90 text-black text-sm font-bold px-4 py-2 rounded-full mr-3">View Data</button>
+                  <span className="text-xs text-white/50 font-semibold tracking-wide">LAST 6 MONTHS</span>
+               </div>
+               
+               {/* NEW: Custom Input Field & Bidding Logic */}
+               <div className="flex gap-2">
+                 <input 
+                   type="number" 
+                   value={bidInput}
+                   onChange={(e) => setBidInput(e.target.value === '' ? '' : Number(e.target.value))}
+                   placeholder={`> ${currentBid}`}
+                   disabled={isBidding || timeLeft === 'Auction Ended'}
+                   className="w-32 bg-black/50 border border-white/20 rounded-xl px-4 py-2 text-white font-bold focus:outline-none focus:border-[#ff5a20] disabled:opacity-50"
+                 />
+                 <button 
+                    onClick={handlePlaceBid}
+                    disabled={isBidding || timeLeft === 'Auction Ended'}
+                    className="bg-[#ff5a20] hover:bg-[#ff4500] disabled:opacity-50 transition-colors text-white font-extrabold px-6 py-2 rounded-xl shadow-lg shadow-[#ff5a20]/20 tracking-wide"
+                  >
+                   {isBidding ? '...' : 'BID'}
+                 </button>
+               </div>
+            </div>
           </div>
         </div>
 
@@ -235,11 +291,11 @@ export default function BidCard({ listing }: { listing: any }) {
           </div>
           <div>
             <p className="text-[10px] text-white/50 uppercase font-bold tracking-wider mb-1">Title</p>
-            <p className="font-bold text-lg text-green-400">{listing.title_status}</p>
+            <p className={`font-bold text-lg ${listing.title_status === 'Clean' ? 'text-green-400' : 'text-yellow-400'}`}>{listing.title_status}</p>
           </div>
           <div>
             <p className="text-[10px] text-white/50 uppercase font-bold tracking-wider mb-1">Ends In</p>
-            <p className="font-bold text-lg text-[#ff5a20] tabular-nums">{timeLeft}</p>
+            <p className="font-bold text-lg text-[#ff5a20] tabular-nums text-nowrap">{timeLeft}</p>
           </div>
         </div>
 
