@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import AdminActionButtons from '../components/AdminActionButtons';
 
 async function AdminDashboardContent() {
   const cookieStore = await cookies();
@@ -124,15 +125,8 @@ async function AdminDashboardContent() {
                       </Link>
                     </div>
                     
-                    {/* Admin Action Buttons (Placeholders for now) */}
-                    <div className="flex gap-3">
-                      <button className="bg-white/10 hover:bg-white/20 text-white font-bold px-4 py-2 rounded-xl text-sm transition-colors">
-                        DISMISS FLAG
-                      </button>
-                      <button className="bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2 rounded-xl text-sm transition-colors shadow-lg shadow-red-500/20">
-                        NUKE COMMENT
-                      </button>
-                    </div>
+                    {/* The Interactive Client Component Buttons */}
+                    <AdminActionButtons commentId={flag.comment_id} />
                   </div>
                 );
               })}
