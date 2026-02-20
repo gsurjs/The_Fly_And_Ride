@@ -2,6 +2,8 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
+export const dynamic = 'force-dynamic';
+
 export default async function Dashboard() {
   // 1. We must 'await' the cookies in modern Next.js
   const cookieStore = await cookies()
