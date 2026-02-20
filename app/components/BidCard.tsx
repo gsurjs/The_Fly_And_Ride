@@ -134,7 +134,7 @@ export default function BidCard({ listing }: { listing: any }) {
           
           {/* Interactive Market Value Chart */}
           <div className="h-28 w-full mb-6">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height={112}>
               <BarChart data={marketData}>
                 {/* Define the SVG Gradient so it looks exactly like the mockup */}
                 <defs>
