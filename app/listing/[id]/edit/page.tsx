@@ -94,40 +94,60 @@ function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: st
     setSaving(true);
     setErrorMsg('');
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      // 1. Strict Auth Check
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) throw new Error("Authentication failed. Please log in again.");
 
-    let finalGalleryUrls = [...(listing.gallery_urls || [])];
+      let finalGalleryUrls = [...(listing.gallery_urls || [])];
 
-    if (galleryFiles.length > 0) {
-      for (const file of galleryFiles) {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${user.id}-${Math.random()}.${fileExt}`;
-        
-        const { error: uploadError } = await supabase.storage.from('motorcycles').upload(fileName, file);
-        if (!uploadError) {
+      // 2. Safe Upload Sequence
+      if (galleryFiles.length > 0) {
+        for (const file of galleryFiles) {
+          // Safeguard against the compression library occasionally dropping the filename
+          const originalName = file.name || 'gallery-image.jpg';
+          const fileExt = originalName.split('.').pop();
+          const fileName = `${user.id}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+          
+          const { error: uploadError } = await supabase.storage
+            .from('motorcycles')
+            .upload(fileName, file);
+
+          if (uploadError) {
+            console.error("Supabase Storage Error:", uploadError);
+            throw new Error(`Failed to upload an image: ${uploadError.message}`);
+          }
+
           const { data } = supabase.storage.from('motorcycles').getPublicUrl(fileName);
           finalGalleryUrls.push(data.publicUrl);
         }
       }
-    }
 
-    const { error } = await supabase
-      .from('listings')
-      .update({
-        mileage: Number(listing.mileage),
-        location: listing.location,
-        title_status: listing.title_status,
-        gallery_urls: finalGalleryUrls
-      })
-      .eq('id', listingId);
+      // 3. Database Transaction
+      const { error: dbError } = await supabase
+        .from('listings')
+        .update({
+          mileage: Number(listing.mileage),
+          location: listing.location,
+          title_status: listing.title_status,
+          gallery_urls: finalGalleryUrls
+        })
+        .eq('id', listingId);
 
-    if (error) {
-      setErrorMsg(`Failed to update: ${error.message}`);
-      setSaving(false);
-    } else {
+      if (dbError) {
+        console.error("PostgreSQL Error:", dbError);
+        throw new Error(`Database update failed: ${dbError.message}`);
+      }
+
+      // 4. Successful Routing
       router.push(`/listing/${listingId}`);
       router.refresh();
+
+    } catch (err: any) {
+      // 5. The Safety Net: Catch the crash, show the user, and unlock the button
+      console.error("Sequence Failed:", err);
+      setErrorMsg(err.message || "An unexpected error occurred during the update.");
+      setSaving(false); 
     }
   };
 
