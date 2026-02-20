@@ -32,6 +32,12 @@ export default async function Navbar() {
         <div className="flex items-center gap-6">
           {user ? (
             <>
+
+              <Link href="/create" className="text-white text-sm font-bold tracking-wide hover:text-[#ff5a20] transition-colors">
+                SELL
+              </Link>
+              <div className="w-px h-4 bg-white/20 mx-2"></div>
+              
               <Link href="/dashboard" className="text-white text-sm font-bold tracking-wide hover:text-[#ff5a20] transition-colors">
                 MY GARAGE
               </Link>
