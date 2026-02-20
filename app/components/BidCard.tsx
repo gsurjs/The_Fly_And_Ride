@@ -1,19 +1,39 @@
-'use client'; // tells Next.js this component handles browser interactivity
+'use client'; 
+import { useState, useEffect } from 'react';
 
 export default function BidCard({ listing }: { listing: any }) {
+  const [timeLeft, setTimeLeft] = useState('Calculating...');
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const difference = new Date(listing.ends_at).getTime() - new Date().getTime();
+      
+      if (difference > 0) {
+        const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((difference / 1000 / 60) % 60);
+        const seconds = Math.floor((difference / 1000) % 60);
+        setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
+      } else {
+        setTimeLeft('Auction Ended');
+        clearInterval(timer);
+      }
+    }, 1000);
+
+    return () => clearInterval(timer); // Cleanup memory when navigating away
+  }, [listing.ends_at]);
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl w-full">
       
       {/* LEFT COLUMN: The Motorcycle Image */}
       <div className="relative rounded-3xl overflow-hidden shadow-2xl h-[600px] bg-black">
-        {/* Placeholder for the actual image. In production, use next/image */}
         <img 
           src="https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?q=80&w=2070" 
           alt="Ducati Panigale V4"
           className="object-cover w-full h-full opacity-90"
         />
         <div className="absolute top-4 left-4 flex gap-2">
-          <button className="bg-white/20 backdrop-blur-md p-3 rounded-full hover:bg-white/30 transition">
+          <button className="bg-white/20 backdrop-blur-md p-3 rounded-full hover:bg-white/30 transition text-white">
              ←
           </button>
         </div>
@@ -42,7 +62,6 @@ export default function BidCard({ listing }: { listing: any }) {
           
           {/* Chart Placeholder */}
           <div className="h-24 flex items-end gap-2 mb-6 opacity-60">
-             {/* We will replace these with a real charting library later */}
             {[40, 60, 50, 80, 70, 90, 85, 95, 60, 50, 70].map((h, i) => (
               <div key={i} className="flex-1 bg-gradient-to-t from-white/10 to-white/40 rounded-t-sm" style={{ height: `${h}%` }}></div>
             ))}
@@ -75,7 +94,8 @@ export default function BidCard({ listing }: { listing: any }) {
           </div>
           <div>
             <p className="text-[10px] text-white/50 uppercase font-bold tracking-wider mb-1">Ends In</p>
-            <p className="font-bold text-lg text-[#ff5a20]">4h 12m</p>
+            {/* The timer state is injected here */}
+            <p className="font-bold text-lg text-[#ff5a20] tabular-nums">{timeLeft}</p>
           </div>
         </div>
 

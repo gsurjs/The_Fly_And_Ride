@@ -1,13 +1,14 @@
+import { Suspense } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import BidCard from './components/BidCard';
 
-// Initialize the Supabase client for Server-Side fetching
+// Initialize the Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-export default async function Home() {
-  // Fetch the first available listing 
+// 1. Separate the async database call into its own component
+async function ListingFetcher() {
   const { data: listing, error } = await supabase
     .from('listings')
     .select('*')
@@ -15,13 +16,19 @@ export default async function Home() {
     .single();
 
   if (error || !listing) {
-    return <div className="p-10 text-white">Listing not found.</div>;
+    return <div className="p-10 text-white font-bold">No motorcycles found in the database yet.</div>;
   }
 
+  return <BidCard listing={listing} />;
+}
+
+// 2. Wrap the fetcher in a Suspense boundary on the main page
+export default function Home() {
   return (
-    // The rich, dark reddish-brown background
     <main className="min-h-screen bg-[#6b2a1a] p-4 md:p-10 flex items-center justify-center font-sans">
-      <BidCard listing={listing} />
+      <Suspense fallback={<div className="text-white text-xl animate-pulse">Loading auction data...</div>}>
+        <ListingFetcher />
+      </Suspense>
     </main>
   );
 }
