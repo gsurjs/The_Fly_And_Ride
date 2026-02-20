@@ -110,7 +110,7 @@ async function DashboardContent() {
                         imageUrl={bike.image_url} 
                         endsAt={bike.ends_at} 
                       />
-                    <Link href={`/listing/${bike.id}`} className="text-[#ff5a20] text-sm font-bold hover:text-white transition-colors">
+                    <Link href={`/listing/${bike.id}/edit`} className="text-[#ff5a20] text-sm font-bold hover:text-white transition-colors">
                       MANAGE →
                     </Link>
                   </div>
