@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import { useRouter } from 'next/navigation';
 
@@ -13,17 +13,22 @@ export default function CreateListing() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Form State matching our SQL Schema
+  // 1. Initialize with a static value to satisfy the strict server compiler
   const [formData, setFormData] = useState({
     make: '',
     model: '',
-    year: new Date().getFullYear(),
+    year: 2026, 
     mileage: 0,
     location: '',
     title_status: 'Clean',
     reserve_price: 0,
-    duration_days: 7, // Default 7-day auction
+    duration_days: 7,
   });
+
+  // 2. Safely inject the dynamic date ONLY after the browser has hydrated the page
+  useEffect(() => {
+    setFormData((prev) => ({ ...prev, year: new Date().getFullYear() }));
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -34,7 +39,6 @@ export default function CreateListing() {
     setLoading(true);
     setErrorMsg('');
 
-    // 1. Cryptographically verify the user session
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (authError || !user) {
@@ -43,11 +47,11 @@ export default function CreateListing() {
       return;
     }
 
-    // 2. Calculate the exact timestamp for when the auction ends
+    // Note: new Date() is perfectly safe here because handleSubmit is an event 
+    // handler triggered by a click, meaning it only ever runs in the browser.
     const endsAt = new Date();
     endsAt.setDate(endsAt.getDate() + Number(formData.duration_days));
 
-    // 3. Execute the secure database insertion
     const { error: insertError } = await supabase
       .from('listings')
       .insert([
@@ -68,7 +72,6 @@ export default function CreateListing() {
       setErrorMsg(`Database Error: ${insertError.message}`);
       setLoading(false);
     } else {
-      // 4. On success, push them to their garage to see the new active listing
       router.push('/dashboard');
       router.refresh(); 
     }
@@ -88,7 +91,6 @@ export default function CreateListing() {
 
         <form onSubmit={handleSubmit} className="space-y-6 text-white">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Make & Model */}
             <div>
               <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Make</label>
               <input required name="make" type="text" placeholder="e.g., Ducati" value={formData.make} onChange={handleChange}
@@ -100,9 +102,9 @@ export default function CreateListing() {
                 className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-[#ff5a20] transition-colors" />
             </div>
 
-            {/* Year & Mileage */}
             <div>
               <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Year</label>
+              {/* Added a dynamic max attribute to prevent future dates, safely read from the browser */}
               <input required name="year" type="number" min="1900" max={new Date().getFullYear() + 1} value={formData.year} onChange={handleChange}
                 className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-[#ff5a20] transition-colors" />
             </div>
@@ -112,7 +114,6 @@ export default function CreateListing() {
                 className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-[#ff5a20] transition-colors" />
             </div>
 
-            {/* Location & Title */}
             <div>
               <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Location</label>
               <input required name="location" type="text" placeholder="e.g., Atlanta, GA" value={formData.location} onChange={handleChange}
@@ -128,7 +129,6 @@ export default function CreateListing() {
               </select>
             </div>
 
-            {/* Reserve Price & Duration */}
             <div>
               <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Reserve Price ($)</label>
               <input required name="reserve_price" type="number" min="0" value={formData.reserve_price} onChange={handleChange}
