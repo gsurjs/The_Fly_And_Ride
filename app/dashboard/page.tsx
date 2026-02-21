@@ -5,7 +5,8 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import DeleteListingButton from '../components/DeleteListingButton'
 
-async function DashboardContent() {
+// 1. Accept the tab from the URL search parameters
+async function DashboardContent({ currentTab }: { currentTab: string }) {
   const cookieStore = await cookies()
   
   const supabase = createServerClient(
@@ -25,20 +26,33 @@ async function DashboardContent() {
     redirect('/login')
   }
 
-  // 1. Fetching full listing data instead of just the count
+  // 2. Upgraded data fetching to pull full bid details
   const [
     { data: profile },
-    { data: userListings }, // Upgraded this fetch
+    { data: userListings }, 
     { data: watchlistedItems }, 
     { data: userBids }
   ] = await Promise.all([
     supabase.from('profiles').select('username').eq('id', user.id).single(),
     supabase.from('listings').select('*').eq('seller_id', user.id).order('created_at', { ascending: false }),
     supabase.from('watchlist').select('listing_id, listings(*)').eq('user_id', user.id),
-    supabase.from('bids').select('listing_id').eq('bidder_id', user.id)
+    // Grab the actual listings and amounts for the user's bids
+    supabase.from('bids').select('listing_id, amount, listings(*)').eq('bidder_id', user.id).order('amount', { ascending: false })
   ])
 
-  const uniqueActiveBidsCount = new Set(userBids?.map(bid => bid.listing_id)).size || 0;
+  // 3. Process Unique Bids (so multiple bids on one bike only show one card)
+  const uniqueBids = new Map();
+  userBids?.forEach(bid => {
+    if (bid.listings && !uniqueBids.has(bid.listing_id)) {
+      uniqueBids.set(bid.listing_id, {
+        ...bid.listings,
+        myHighestBid: bid.amount
+      });
+    }
+  });
+  const activeBidsList = Array.from(uniqueBids.values());
+
+  const uniqueActiveBidsCount = activeBidsList.length;
   const watchlistCount = watchlistedItems?.length || 0;
   const listingsCount = userListings?.length || 0;
 
@@ -63,120 +77,204 @@ async function DashboardContent() {
         </div>
       </div>
 
-      {/* Active Listings Grid */}
-      <div className="mb-12">
-        <h3 className="text-2xl font-extrabold mb-6 tracking-tight flex items-center gap-3">
-          Your Listings <span className="bg-white/10 text-white/50 text-xs px-3 py-1 rounded-full">{listingsCount}</span>
-        </h3>
-        {listingsCount === 0 ? (
-          <div className="bg-white/5 border border-white/10 p-10 rounded-2xl text-center">
-            <p className="text-white/50 font-bold tracking-wide mb-4">You have no active auctions.</p>
-            <Link href="/create" className="text-[#ff5a20] hover:text-white font-bold text-sm transition-colors uppercase tracking-widest">
-              + Create a Listing
-            </Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {userListings?.map((bike: any) => (
-              <div key={bike.id} className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden hover:border-[#ff5a20]/50 transition-colors cursor-pointer flex flex-col group relative">
-                <div className="absolute top-3 left-3 bg-[#ff5a20] text-white px-3 py-1 rounded-full text-xs font-bold z-10 shadow-lg">
-                  YOUR LISTING
-                </div>
-                <div className="h-48 bg-black relative overflow-hidden">
-                  <img 
-                    src={bike.image_url || "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=800"} 
-                    alt={`${bike.make} ${bike.model}`}
-                    className="object-cover w-full h-full opacity-80 group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-green-400 border border-white/10">
-                    {bike.title_status}
-                  </div>
-                </div>
-                <div className="p-5 flex-grow flex flex-col justify-between">
-                  <div>
-                    <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-1">{bike.year} • {bike.mileage.toLocaleString()} mi</p>
-                    <h4 className="text-xl font-extrabold mb-4">{bike.make} {bike.model}</h4>
-                  </div>
-                  <div className="flex justify-between items-end">
-                    <div>
-                      <p className="text-[10px] text-white/50 uppercase font-bold tracking-wider mb-1">Reserve</p>
-                      <p className="text-sm font-semibold">${bike.reserve_price.toLocaleString()}</p>
-                    </div>
-                    {/* Updated Action Container */}
-                    <div className="flex items-center gap-4">
-                      {/* Inject the secure delete button */}
-                      <DeleteListingButton 
-                        listingId={bike.id} 
-                        imageUrl={bike.image_url} 
-                        endsAt={bike.ends_at} 
-                      />
-                    <Link href={`/listing/${bike.id}/edit`} className="text-[#ff5a20] text-sm font-bold hover:text-white transition-colors">
-                      MANAGE →
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-        ))}
-        </div>
-        )}
+      {/* Tab Navigation Row */}
+      <div className="flex gap-4 mb-8 overflow-x-auto pb-2 custom-scrollbar">
+        <Link 
+          href="?tab=watchlist"
+          className={`px-6 py-3 rounded-xl font-extrabold text-sm tracking-widest uppercase transition-all whitespace-nowrap ${currentTab === 'watchlist' ? 'bg-white text-black shadow-lg scale-105' : 'bg-black/40 text-white/50 hover:bg-black/60 hover:text-white border border-white/10'}`}
+        >
+          Saved Vehicles ({watchlistCount})
+        </Link>
+        <Link 
+          href="?tab=bids"
+          className={`px-6 py-3 rounded-xl font-extrabold text-sm tracking-widest uppercase transition-all whitespace-nowrap ${currentTab === 'bids' ? 'bg-[#ff5a20] text-white shadow-lg shadow-[#ff5a20]/20 scale-105' : 'bg-black/40 text-white/50 hover:bg-black/60 hover:text-white border border-white/10'}`}
+        >
+          Active Bids ({uniqueActiveBidsCount})
+        </Link>
+        <Link 
+          href="?tab=listings"
+          className={`px-6 py-3 rounded-xl font-extrabold text-sm tracking-widest uppercase transition-all whitespace-nowrap ${currentTab === 'listings' ? 'bg-white text-black shadow-lg scale-105' : 'bg-black/40 text-white/50 hover:bg-black/60 hover:text-white border border-white/10'}`}
+        >
+          My Listings ({listingsCount})
+        </Link>
       </div>
 
-      {/* The Watchlist Grid */}
-      <h3 className="text-2xl font-extrabold mb-6 tracking-tight">Saved to Garage</h3>
-      {watchlistCount === 0 ? (
-        <div className="bg-white/5 border border-white/10 p-10 rounded-2xl text-center">
-          <p className="text-white/50 font-bold tracking-wide">No vehicles saved yet.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {watchlistedItems?.map((item: any) => {
-            const bike = item.listings; 
-            if (!bike) return null;
-            
-            return (
-              <div key={item.listing_id} className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden hover:border-white/30 transition-colors cursor-pointer flex flex-col group">
-                <div className="h-48 bg-black relative overflow-hidden">
-                  <img 
-                    src={bike.image_url || "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?q=80&w=800"} 
-                    alt={`${bike.make} ${bike.model}`}
-                    className="object-cover w-full h-full opacity-80 group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-green-400 border border-white/10">
-                    {bike.title_status}
-                  </div>
-                </div>
-                
-                <div className="p-5 flex-grow flex flex-col justify-between">
-                  <div>
-                    <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-1">{bike.year} • {bike.mileage.toLocaleString()} mi</p>
-                    <h4 className="text-xl font-extrabold mb-4">{bike.make} {bike.model}</h4>
-                  </div>
-                  
-                  <div className="flex justify-between items-end">
-                    <div>
-                      <p className="text-[10px] text-white/50 uppercase font-bold tracking-wider mb-1">Location</p>
-                      <p className="text-sm font-semibold">{bike.location}</p>
-                    </div>
-                    <Link href={`/listing/${bike.id}`} className="text-[#ff5a20] text-sm font-bold hover:text-white transition-colors">
-                      VIEW →
-                    </Link>
-                  </div>
-                </div>
+      <div className="bg-black/30 border border-white/10 rounded-3xl p-6 md:p-8 backdrop-blur-sm min-h-[500px]">
+        
+        {/* =========================================
+            TAB 1: WATCHLIST 
+            ========================================= */}
+        {currentTab === 'watchlist' && (
+          <div>
+            <h3 className="text-2xl font-extrabold mb-6 tracking-tight">Saved to Garage</h3>
+            {watchlistCount === 0 ? (
+              <div className="bg-white/5 border border-white/10 p-10 rounded-2xl text-center">
+                <p className="text-white/50 font-bold tracking-wide">No vehicles saved yet.</p>
               </div>
-            );
-          })}
-        </div>
-      )}
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {watchlistedItems?.map((item: any) => {
+                  const bike = item.listings; 
+                  if (!bike) return null;
+                  return (
+                    <div key={item.listing_id} className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden hover:border-white/30 transition-colors cursor-pointer flex flex-col group">
+                      <div className="h-48 bg-black relative overflow-hidden">
+                        <img 
+                          src={bike.image_url || "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?q=80&w=800"} 
+                          alt={`${bike.make} ${bike.model}`}
+                          className="object-cover w-full h-full opacity-80 group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-green-400 border border-white/10">
+                          {bike.title_status}
+                        </div>
+                      </div>
+                      <div className="p-5 flex-grow flex flex-col justify-between">
+                        <div>
+                          <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-1">{bike.year} • {bike.mileage.toLocaleString()} mi</p>
+                          <h4 className="text-xl font-extrabold mb-4">{bike.make} {bike.model}</h4>
+                        </div>
+                        <div className="flex justify-between items-end">
+                          <div>
+                            <p className="text-[10px] text-white/50 uppercase font-bold tracking-wider mb-1">Location</p>
+                            <p className="text-sm font-semibold">{bike.location}</p>
+                          </div>
+                          <Link href={`/listing/${bike.id}`} className="text-[#ff5a20] text-sm font-bold hover:text-white transition-colors">
+                            VIEW →
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* =========================================
+            TAB 2: ACTIVE BIDS (NEW PILLAR)
+            ========================================= */}
+        {currentTab === 'bids' && (
+          <div>
+            <h3 className="text-2xl font-extrabold mb-6 tracking-tight">Your Active Bids</h3>
+            {uniqueActiveBidsCount === 0 ? (
+              <div className="bg-white/5 border border-white/10 p-10 rounded-2xl text-center">
+                <p className="text-white/50 font-bold tracking-wide">You haven't placed any bids yet.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {activeBidsList.map((bike: any) => (
+                  <div key={bike.id} className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden hover:border-[#ff5a20]/50 transition-colors cursor-pointer flex flex-col group relative">
+                    <div className="absolute top-3 left-3 bg-[#ff5a20] text-white px-3 py-1 rounded-full text-[10px] font-black tracking-widest z-10 shadow-lg uppercase border border-[#ff5a20]/50">
+                      Your Max: ${bike.myHighestBid.toLocaleString()}
+                    </div>
+                    <div className="h-48 bg-black relative overflow-hidden">
+                      <img 
+                        src={bike.image_url || "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=800"} 
+                        alt={`${bike.make} ${bike.model}`}
+                        className="object-cover w-full h-full opacity-80 group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-green-400 border border-white/10">
+                        {bike.title_status}
+                      </div>
+                    </div>
+                    <div className="p-5 flex-grow flex flex-col justify-between">
+                      <div>
+                        <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-1">{bike.year} • {bike.mileage.toLocaleString()} mi</p>
+                        <h4 className="text-xl font-extrabold mb-4">{bike.make} {bike.model}</h4>
+                      </div>
+                      <div className="flex justify-between items-end">
+                        <div>
+                          <p className="text-[10px] text-white/50 uppercase font-bold tracking-wider mb-1">Reserve</p>
+                          <p className="text-sm font-semibold">${bike.reserve_price.toLocaleString()}</p>
+                        </div>
+                        <Link href={`/listing/${bike.id}`} className="text-[#ff5a20] text-sm font-bold hover:text-white transition-colors">
+                          VIEW AUCTION →
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* =========================================
+            TAB 3: YOUR LISTINGS (WITH PRESERVED BUTTONS)
+            ========================================= */}
+        {currentTab === 'listings' && (
+          <div>
+            <h3 className="text-2xl font-extrabold mb-6 tracking-tight">Your Active Listings</h3>
+            {listingsCount === 0 ? (
+              <div className="bg-white/5 border border-white/10 p-10 rounded-2xl text-center">
+                <p className="text-white/50 font-bold tracking-wide mb-4">You have no active auctions.</p>
+                <Link href="/create" className="text-[#ff5a20] hover:text-white font-bold text-sm transition-colors uppercase tracking-widest">
+                  + Create a Listing
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {userListings?.map((bike: any) => (
+                  <div key={bike.id} className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden hover:border-[#ff5a20]/50 transition-colors cursor-pointer flex flex-col group relative">
+                    <div className="absolute top-3 left-3 bg-white/10 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-bold z-10 shadow-lg border border-white/20">
+                      YOUR LISTING
+                    </div>
+                    <div className="h-48 bg-black relative overflow-hidden">
+                      <img 
+                        src={bike.image_url || "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=800"} 
+                        alt={`${bike.make} ${bike.model}`}
+                        className="object-cover w-full h-full opacity-80 group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-green-400 border border-white/10">
+                        {bike.title_status}
+                      </div>
+                    </div>
+                    <div className="p-5 flex-grow flex flex-col justify-between">
+                      <div>
+                        <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-1">{bike.year} • {bike.mileage.toLocaleString()} mi</p>
+                        <h4 className="text-xl font-extrabold mb-4">{bike.make} {bike.model}</h4>
+                      </div>
+                      <div className="flex justify-between items-end">
+                        <div>
+                          <p className="text-[10px] text-white/50 uppercase font-bold tracking-wider mb-1">Reserve</p>
+                          <p className="text-sm font-semibold">${bike.reserve_price.toLocaleString()}</p>
+                        </div>
+                
+                        <div className="flex items-center gap-4">
+                          <DeleteListingButton 
+                            listingId={bike.id} 
+                            imageUrl={bike.image_url} 
+                            endsAt={bike.ends_at} 
+                          />
+                          <Link href={`/listing/${bike.id}/edit`} className="text-[#ff5a20] text-sm font-bold hover:text-white transition-colors">
+                            MANAGE →
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+      </div>
     </div>
   )
 }
 
-export default function Dashboard() {
+// Ensure the page component accepts the Next 15 searchParams Promise
+export default async function Dashboard({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+  // Resolve the searchParams and default to 'watchlist' if no tab is selected
+  const resolvedParams = await searchParams;
+  const currentTab = resolvedParams.tab || 'watchlist';
+
   return (
     <main className="min-h-screen bg-[#6b2a1a] text-white p-4 md:p-10 font-sans">
       <Suspense fallback={<div className="text-white/50 animate-pulse text-xl font-bold tracking-widest uppercase">Unlocking Garage...</div>}>
-        <DashboardContent />
+        <DashboardContent currentTab={currentTab} />
       </Suspense>
     </main>
   )
