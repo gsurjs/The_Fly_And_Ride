@@ -4,6 +4,8 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import AdminActionButtons from '../components/AdminActionButtons';
+import AdminCancelButton from '../components/AdminCancelButton';
+import AdminBanButton from '../components/AdminBanButton';
 
 async function AdminDashboardContent() {
   const cookieStore = await cookies();
@@ -146,9 +148,7 @@ async function AdminDashboardContent() {
                     <Link href={`/listing/${bike.id}`} target="_blank" className="bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors">
                       VIEW
                     </Link>
-                    <button className="bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/30 text-xs font-bold px-3 py-2 rounded-lg transition-colors">
-                      CANCEL
-                    </button>
+                    <AdminCancelButton listingId={bike.id} />
                   </div>
                 </div>
               ))}
@@ -172,9 +172,7 @@ async function AdminDashboardContent() {
                     </p>
                     <p className="text-white/50 text-xs font-semibold mt-1">Joined: {new Date(user.created_at).toLocaleDateString()}</p>
                   </div>
-                  <button className={`${user.is_banned ? 'bg-white/10 text-white/50' : 'bg-red-500 hover:bg-red-600 text-white'} text-xs font-bold px-3 py-2 rounded-lg transition-colors`}>
-                    {user.is_banned ? 'BANNED' : 'BAN USER'}
-                  </button>
+                  <AdminBanButton userId={user.id} isBanned={user.is_banned} />
                 </div>
               ))}
             </div>
