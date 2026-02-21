@@ -5,8 +5,12 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import DeleteListingButton from '../components/DeleteListingButton'
 
-// 1. Accept the tab from the URL search parameters
-async function DashboardContent({ currentTab }: { currentTab: string }) {
+// 1. Accept the raw Promise from the parent page
+async function DashboardContent({ searchParamsPromise }: { searchParamsPromise: Promise<{ tab?: string }> }) {
+  // 2. Await the dynamic URL parameters safely INSIDE the Suspense boundary
+  const resolvedParams = await searchParamsPromise;
+  const currentTab = resolvedParams.tab || 'watchlist';
+
   const cookieStore = await cookies()
   
   const supabase = createServerClient(
@@ -26,7 +30,6 @@ async function DashboardContent({ currentTab }: { currentTab: string }) {
     redirect('/login')
   }
 
-  // 2. Upgraded data fetching to pull full bid details
   const [
     { data: profile },
     { data: userListings }, 
@@ -36,11 +39,9 @@ async function DashboardContent({ currentTab }: { currentTab: string }) {
     supabase.from('profiles').select('username').eq('id', user.id).single(),
     supabase.from('listings').select('*').eq('seller_id', user.id).order('created_at', { ascending: false }),
     supabase.from('watchlist').select('listing_id, listings(*)').eq('user_id', user.id),
-    // Grab the actual listings and amounts for the user's bids
     supabase.from('bids').select('listing_id, amount, listings(*)').eq('bidder_id', user.id).order('amount', { ascending: false })
   ])
 
-  // 3. Process Unique Bids (so multiple bids on one bike only show one card)
   const uniqueBids = new Map();
   userBids?.forEach(bid => {
     if (bid.listings && !uniqueBids.has(bid.listing_id)) {
@@ -152,7 +153,7 @@ async function DashboardContent({ currentTab }: { currentTab: string }) {
         )}
 
         {/* =========================================
-            TAB 2: ACTIVE BIDS (NEW PILLAR)
+            TAB 2: ACTIVE BIDS
             ========================================= */}
         {currentTab === 'bids' && (
           <div>
@@ -201,7 +202,7 @@ async function DashboardContent({ currentTab }: { currentTab: string }) {
         )}
 
         {/* =========================================
-            TAB 3: YOUR LISTINGS (WITH PRESERVED BUTTONS)
+            TAB 3: YOUR LISTINGS
             ========================================= */}
         {currentTab === 'listings' && (
           <div>
@@ -240,7 +241,6 @@ async function DashboardContent({ currentTab }: { currentTab: string }) {
                           <p className="text-[10px] text-white/50 uppercase font-bold tracking-wider mb-1">Reserve</p>
                           <p className="text-sm font-semibold">${bike.reserve_price.toLocaleString()}</p>
                         </div>
-                
                         <div className="flex items-center gap-4">
                           <DeleteListingButton 
                             listingId={bike.id} 
@@ -265,16 +265,13 @@ async function DashboardContent({ currentTab }: { currentTab: string }) {
   )
 }
 
-// Ensure the page component accepts the Next 15 searchParams Promise
-export default async function Dashboard({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
-  // Resolve the searchParams and default to 'watchlist' if no tab is selected
-  const resolvedParams = await searchParams;
-  const currentTab = resolvedParams.tab || 'watchlist';
-
+// 3. Keep the top-level page completely synchronous
+export default function Dashboard({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   return (
     <main className="min-h-screen bg-[#6b2a1a] text-white p-4 md:p-10 font-sans">
-      <Suspense fallback={<div className="text-white/50 animate-pulse text-xl font-bold tracking-widest uppercase">Unlocking Garage...</div>}>
-        <DashboardContent currentTab={currentTab} />
+      <Suspense fallback={<div className="text-[#ff5a20] animate-pulse text-xl font-bold tracking-widest uppercase">Unlocking Garage...</div>}>
+        {/* Pass the Promise directly into the shielded component */}
+        <DashboardContent searchParamsPromise={searchParams} />
       </Suspense>
     </main>
   )
