@@ -18,6 +18,9 @@ export default function CreateListing() {
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
 
+  // State to track which item is currently being dragged
+  const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
+
   const [maxYear, setMaxYear] = useState(2027); 
 
   const [formData, setFormData] = useState({
@@ -45,8 +48,14 @@ export default function CreateListing() {
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
 
+    const remainingSlots = 5 - imageFiles.length;
+    if (remainingSlots <= 0) {
+      setErrorMsg("You can only upload a maximum of 5 images.");
+      return;
+    }
+
     // Convert FileList to Array and cap at 5 images
-    const filesArray = Array.from(e.target.files).slice(0, 5);
+    const filesArray = Array.from(e.target.files).slice(0, remainingSlots);
     
     const processedFiles: File[] = [];
     const newPreviewUrls: string[] = [];
@@ -87,8 +96,48 @@ export default function CreateListing() {
       }
     }
 
-    setImageFiles(processedFiles);
-    setPreviewUrls(newPreviewUrls);
+    // Append to existing arrays instead of overwriting
+    setImageFiles(prev => [...prev, ...processedFiles]);
+    setPreviewUrls(prev => [...prev, ...newPreviewUrls]);
+  };
+
+  // Remove a specific image
+  const removeImage = (indexToRemove: number) => {
+    setImageFiles(prev => prev.filter((_, idx) => idx !== indexToRemove));
+    setPreviewUrls(prev => {
+      URL.revokeObjectURL(prev[indexToRemove]); // Clean up memory
+      return prev.filter((_, idx) => idx !== indexToRemove);
+    });
+  };
+
+  // Drag and Drop Handlers for Reordering
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIdx(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault(); // Necessary to allow dropping
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (draggedIdx === null || draggedIdx === dropIndex) return;
+
+    const newFiles = [...imageFiles];
+    const newPreviews = [...previewUrls];
+
+    // Remove the dragged item and insert it at the drop index
+    const [draggedFile] = newFiles.splice(draggedIdx, 1);
+    newFiles.splice(dropIndex, 0, draggedFile);
+
+    const [draggedPreview] = newPreviews.splice(draggedIdx, 1);
+    newPreviews.splice(dropIndex, 0, draggedPreview);
+
+    setImageFiles(newFiles);
+    setPreviewUrls(newPreviews);
+    setDraggedIdx(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -185,34 +234,62 @@ export default function CreateListing() {
         <form onSubmit={handleSubmit} className="space-y-8 text-white">
           
           {/* UPGRADED: Multi-Image Upload Dropzone & Previews */}
-          <div className="flex flex-col gap-2">
-            <div className="bg-white/5 border-2 border-dashed border-white/20 rounded-2xl p-6 text-center hover:border-[#ff5a20] transition-colors relative overflow-hidden group">
-              <div className="py-12">
-                <p className="text-[#ff5a20] font-extrabold text-xl mb-2">Upload Photos (Up to 5)</p>
-                <p className="text-white/50 text-sm font-semibold tracking-wide">High quality landscape images work best. First image is the main cover.</p>
+          <div className="flex flex-col gap-4">
+            {imageFiles.length < 5 && (
+              <div className="bg-white/5 border-2 border-dashed border-white/20 rounded-2xl p-6 text-center hover:border-[#ff5a20] transition-colors relative overflow-hidden group cursor-pointer">
+                <div className="py-8">
+                  <p className="text-[#ff5a20] font-extrabold text-xl mb-2">
+                    Upload Photos ({imageFiles.length}/5)
+                  </p>
+                  <p className="text-white/50 text-sm font-semibold tracking-wide">
+                    Drag and drop, or click to browse.
+                  </p>
+                </div>
+                <input 
+                  type="file" 
+                  multiple 
+                  accept="image/jpeg, image/png, image/webp, .heic" 
+                  onChange={handleImageChange}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
               </div>
-              <input 
-                type="file" 
-                multiple // Enables multi-select
-                accept="image/jpeg, image/png, image/webp, .heic" 
-                onChange={handleImageChange}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              />
-            </div>
+            )}
 
-            {/* Thumbnail Previews */}
+            {/* UPGRADED: Draggable Thumbnail Previews */}
             {previewUrls.length > 0 && (
-              <div className="flex gap-3 mt-3 overflow-x-auto py-2">
-                {previewUrls.map((url, idx) => (
-                  <div key={idx} className="relative w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden border border-white/20">
-                    <img src={url} alt={`Preview ${idx + 1}`} className="object-cover w-full h-full" />
-                    {idx === 0 && (
-                      <span className="absolute bottom-0 left-0 right-0 bg-black/70 text-[#ff5a20] text-[10px] font-black text-center py-1 uppercase tracking-widest">
-                        Main
-                      </span>
-                    )}
-                  </div>
-                ))}
+              <div className="bg-black/40 p-4 rounded-2xl border border-white/10">
+                <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-3">
+                  Drag to reorder. The first image is the Main cover.
+                </p>
+                <div className="flex gap-4 overflow-x-auto py-2 custom-scrollbar items-center">
+                  {previewUrls.map((url, idx) => (
+                    <div 
+                      key={url} 
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, idx)}
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, idx)}
+                      className={`relative w-28 h-28 flex-shrink-0 rounded-xl overflow-hidden border-2 cursor-grab active:cursor-grabbing transition-all ${draggedIdx === idx ? 'opacity-50 border-white/50' : idx === 0 ? 'border-[#ff5a20] scale-105 shadow-lg shadow-[#ff5a20]/20' : 'border-white/20 hover:border-white/50'}`}
+                    >
+                      <img src={url} alt={`Preview ${idx + 1}`} className="object-cover w-full h-full pointer-events-none" />
+                      
+                      {/* Delete Button */}
+                      <button
+                        type="button"
+                        onClick={() => removeImage(idx)}
+                        className="absolute top-1 right-1 bg-black/80 hover:bg-red-500 text-white w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold backdrop-blur-md transition-colors shadow-lg z-10"
+                      >
+                        ✕
+                      </button>
+
+                      {idx === 0 && (
+                        <span className="absolute bottom-0 left-0 right-0 bg-black/80 backdrop-blur-md text-[#ff5a20] text-[10px] font-black text-center py-1.5 uppercase tracking-widest z-10">
+                          Main
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
