@@ -211,8 +211,14 @@ export default function BidCard({ listing }: { listing: any }) {
             ) : (
               bidHistory.map((bid, idx) => (
                 <div key={bid.id} className={`flex justify-between items-center p-3 rounded-xl border ${idx === 0 ? 'bg-[#ff5a20]/10 border-[#ff5a20]/30' : 'bg-black/30 border-white/5'}`}>
-                  <div>
-                    <p className="text-white font-bold">{bid.username}</p>
+                  <div className="flex flex-col items-start relative z-10">
+                    {/* The Fully Clickable Link */}
+                    <Link 
+                      href={`/user/${bid.bidder_id}`} 
+                      className="text-white font-bold hover:text-[#ff5a20] hover:underline transition-colors py-0.5 cursor-pointer"
+                    >
+                      {bid.username}
+                    </Link>
                     <p className="text-white/40 text-[10px] uppercase tracking-wider font-semibold">
                       {new Date(bid.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </p>
