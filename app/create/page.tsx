@@ -14,9 +14,9 @@ export default function CreateListing() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   
-  // Image Upload State
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  // UPGRADED: Image Upload State (Arrays for multiple files)
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
 
   const [maxYear, setMaxYear] = useState(2027); 
 
@@ -41,48 +41,54 @@ export default function CreateListing() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // The Upgraded Client-Side Conversion & Compression Logic
+  // UPGRADED: Processes up to 5 images, including HEIC conversion & compression
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    let file = e.target.files?.[0];
-    if (!file) return;
+    if (!e.target.files) return;
 
-    try {
-      // 1. Intercept iPhone HEIC/HEIF files
-      if (file.type === 'image/heic' || file.name.toLowerCase().endsWith('.heic')) {
-        // We dynamically import heic2any inside the function to protect the Next.js SSR build
-        // because heic2any relies on browser window APIs that crash server compilers
-        const heic2any = (await import('heic2any')).default; 
+    // Convert FileList to Array and cap at 5 images
+    const filesArray = Array.from(e.target.files).slice(0, 5);
+    
+    const processedFiles: File[] = [];
+    const newPreviewUrls: string[] = [];
+
+    for (let file of filesArray) {
+      try {
+        // 1. Intercept iPhone HEIC/HEIF files
+        if (file.type === 'image/heic' || file.name.toLowerCase().endsWith('.heic')) {
+          const heic2any = (await import('heic2any')).default; 
+          
+          const convertedBlob = await heic2any({
+            blob: file,
+            toType: 'image/jpeg',
+            quality: 0.8,
+          });
+          
+          const finalBlob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+          
+          file = new File([finalBlob], file.name.replace(/\.heic$/i, '.jpg'), {
+            type: 'image/jpeg',
+          });
+        }
+
+        // 2. Run existing cost-saving compression
+        const options = {
+          maxSizeMB: 1, 
+          maxWidthOrHeight: 1920,
+          useWebWorker: true,
+        };
         
-        const convertedBlob = await heic2any({
-          blob: file,
-          toType: 'image/jpeg',
-          quality: 0.8,
-        });
+        const compressedFile = await imageCompression(file, options);
+        processedFiles.push(compressedFile);
+        newPreviewUrls.push(URL.createObjectURL(compressedFile)); 
         
-        // heic2any can return an array if it's a live photo/sequence; we just grab the first frame
-        const finalBlob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
-        
-        // Convert the raw Blob back into a standard JavaScript File object
-        file = new File([finalBlob], file.name.replace(/\.heic$/i, '.jpg'), {
-          type: 'image/jpeg',
-        });
+      } catch (error) {
+        console.error("Image processing error for file", file.name, error);
+        setErrorMsg("Failed to process one or more images. Please try different photos.");
       }
-
-      // 2. Run our existing cost-saving compression (now guaranteed to receive a standard image format)
-      const options = {
-        maxSizeMB: 1, 
-        maxWidthOrHeight: 1920,
-        useWebWorker: true,
-      };
-      
-      const compressedFile = await imageCompression(file, options);
-      setImageFile(compressedFile);
-      setImagePreview(URL.createObjectURL(compressedFile)); 
-      
-    } catch (error) {
-      console.error("Image processing error:", error);
-      setErrorMsg("Failed to process image. Please try a different photo.");
     }
+
+    setImageFiles(processedFiles);
+    setPreviewUrls(newPreviewUrls);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -90,8 +96,8 @@ export default function CreateListing() {
     setLoading(true);
     setErrorMsg('');
 
-    if (!imageFile) {
-      setErrorMsg("Please upload an image of the motorcycle.");
+    if (imageFiles.length === 0) {
+      setErrorMsg("Please upload at least one image of the motorcycle.");
       setLoading(false);
       return;
     }
@@ -104,55 +110,63 @@ export default function CreateListing() {
       return;
     }
 
-    // Step 1: Upload the compressed image to Supabase Storage
-    const fileExt = imageFile.name.split('.').pop();
-    const fileName = `${user.id}-${Math.random()}.${fileExt}`; // Cryptographically safe, unique filename
-    const filePath = `${fileName}`;
+    try {
+      const uploadedUrls: string[] = [];
 
-    const { error: uploadError } = await supabase.storage
-      .from('motorcycles')
-      .upload(filePath, imageFile);
+      // UPGRADED: Loop through all files and upload them
+      for (const file of imageFiles) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${user.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `${fileName}`;
 
-    if (uploadError) {
-      setErrorMsg(`Image Upload Error: ${uploadError.message}`);
-      setLoading(false);
-      return;
-    }
+        const { error: uploadError } = await supabase.storage
+          .from('motorcycles')
+          .upload(filePath, file);
 
-    // Step 2: Get the public URL of the successfully uploaded image
-    const { data: publicUrlData } = supabase.storage
-      .from('motorcycles')
-      .getPublicUrl(filePath);
+        if (uploadError) throw uploadError;
 
-    const imageUrl = publicUrlData.publicUrl;
+        const { data: publicUrlData } = supabase.storage
+          .from('motorcycles')
+          .getPublicUrl(filePath);
 
-    // Step 3: Insert the listing data with the new image URL
-    const endsAt = new Date();
-    endsAt.setDate(endsAt.getDate() + Number(formData.duration_days));
+        uploadedUrls.push(publicUrlData.publicUrl);
+      }
 
-    const { error: insertError } = await supabase
-      .from('listings')
-      .insert([
-        {
-          seller_id: user.id,
-          make: formData.make,
-          model: formData.model,
-          year: Number(formData.year),
-          mileage: Number(formData.mileage),
-          location: formData.location,
-          title_status: formData.title_status,
-          reserve_price: Number(formData.reserve_price),
-          ends_at: endsAt.toISOString(),
-          image_url: imageUrl, // Mapping the hosted image to the database row
-        }
-      ]);
+      // Split the URLs: First is the main hero image, the rest go to the gallery array
+      const mainImageUrl = uploadedUrls[0];
+      const galleryUrls = uploadedUrls.slice(1);
 
-    if (insertError) {
-      setErrorMsg(`Database Error: ${insertError.message}`);
-      setLoading(false);
-    } else {
+      // Prepare date logic
+      const endsAt = new Date();
+      endsAt.setDate(endsAt.getDate() + Number(formData.duration_days));
+
+      // Insert the listing data
+      const { error: insertError } = await supabase
+        .from('listings')
+        .insert([
+          {
+            seller_id: user.id,
+            make: formData.make,
+            model: formData.model,
+            year: Number(formData.year),
+            mileage: Number(formData.mileage),
+            location: formData.location,
+            title_status: formData.title_status,
+            reserve_price: Number(formData.reserve_price),
+            ends_at: endsAt.toISOString(),
+            image_url: mainImageUrl, 
+            gallery_urls: galleryUrls, // Add the gallery array to the database
+          }
+        ]);
+
+      if (insertError) throw insertError;
+
       router.push('/dashboard');
       router.refresh(); 
+
+    } catch (err: any) {
+      setErrorMsg(`Error processing listing: ${err.message}`);
+      setLoading(false);
     }
   };
 
@@ -170,29 +184,40 @@ export default function CreateListing() {
 
         <form onSubmit={handleSubmit} className="space-y-8 text-white">
           
-          {/* New Image Upload Dropzone */}
-          <div className="bg-white/5 border-2 border-dashed border-white/20 rounded-2xl p-6 text-center hover:border-[#ff5a20] transition-colors relative overflow-hidden group">
-            {imagePreview ? (
-              <div className="relative h-64 w-full">
-                <img src={imagePreview} alt="Preview" className="object-cover w-full h-full rounded-xl" />
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-xl">
-                  <p className="font-bold tracking-widest uppercase">Click to Change Photo</p>
-                </div>
-              </div>
-            ) : (
+          {/* UPGRADED: Multi-Image Upload Dropzone & Previews */}
+          <div className="flex flex-col gap-2">
+            <div className="bg-white/5 border-2 border-dashed border-white/20 rounded-2xl p-6 text-center hover:border-[#ff5a20] transition-colors relative overflow-hidden group">
               <div className="py-12">
-                <p className="text-[#ff5a20] font-extrabold text-xl mb-2">Upload Primary Photo</p>
-                <p className="text-white/50 text-sm font-semibold tracking-wide">High quality landscape images work best.</p>
+                <p className="text-[#ff5a20] font-extrabold text-xl mb-2">Upload Photos (Up to 5)</p>
+                <p className="text-white/50 text-sm font-semibold tracking-wide">High quality landscape images work best. First image is the main cover.</p>
+              </div>
+              <input 
+                type="file" 
+                multiple // Enables multi-select
+                accept="image/jpeg, image/png, image/webp, .heic" 
+                onChange={handleImageChange}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              />
+            </div>
+
+            {/* Thumbnail Previews */}
+            {previewUrls.length > 0 && (
+              <div className="flex gap-3 mt-3 overflow-x-auto py-2">
+                {previewUrls.map((url, idx) => (
+                  <div key={idx} className="relative w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden border border-white/20">
+                    <img src={url} alt={`Preview ${idx + 1}`} className="object-cover w-full h-full" />
+                    {idx === 0 && (
+                      <span className="absolute bottom-0 left-0 right-0 bg-black/70 text-[#ff5a20] text-[10px] font-black text-center py-1 uppercase tracking-widest">
+                        Main
+                      </span>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
-            <input 
-              type="file" 
-              accept="image/jpeg, image/png, image/webp, .heic" 
-              onChange={handleImageChange}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-            />
           </div>
 
+          {/* Form Fields Remain Completely Untouched */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Make</label>
