@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface CommentsProps {
   listingId: string;
@@ -154,7 +155,9 @@ export default function CommentsSection({ listingId, sellerId }: CommentsProps) 
                 
                 {/* Header */}
                 <div className="flex items-center gap-3 mb-2">
-                  <span className="font-extrabold text-white">{comment.username}</span>
+                  <Link href={`/user/${comment.user_id}`} className="font-extrabold text-white hover:text-[#ff5a20] hover:underline transition-colors">
+                    {comment.username}
+                    </Link>
                   {comment.isSeller && (
                     <span className="bg-[#ff5a20] text-white text-[10px] font-extrabold px-2 py-0.5 rounded uppercase tracking-widest shadow-md shadow-[#ff5a20]/20">
                       Seller

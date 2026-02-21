@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import { BarChart, Bar, ResponsiveContainer, Tooltip } from 'recharts';
+import Link from 'next/link';
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -307,7 +308,9 @@ export default function BidCard({ listing }: { listing: any }) {
           {/* DYNAMIC END STATES */}
           {isSold && (
             <div className="text-center py-6 border-t border-green-500/20 mt-6 animate-pulse">
-              <p className="text-green-400 font-extrabold text-2xl tracking-tight mb-2">SOLD TO {bidHistory[0]?.username}</p>
+              <p className="text-green-400 font-extrabold text-2xl tracking-tight mb-2">
+                SOLD TO <Link href={`/user/${bidHistory[0]?.bidder_id}`} className="hover:underline hover:text-white transition-colors">{bidHistory[0]?.username}</Link>
+              </p>
               <p className="text-white/60 text-sm font-semibold">The seller will contact the winning bidder shortly.</p>
             </div>
           )}
