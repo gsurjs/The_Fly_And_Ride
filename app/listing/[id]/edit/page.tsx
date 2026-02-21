@@ -254,7 +254,7 @@ function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: st
           <span className="text-xl">🔒</span>
           <div>
             <p>Active bids have been placed.</p>
-            <p className="text-yellow-500/70 text-xs font-semibold">Make, Model, Year, and Title are locked. Reserve price can only be lowered.</p>
+            <p className="text-yellow-500/70 text-xs font-semibold">Make, Model, Year, Mileage, and Title are locked. Reserve price can only be lowered.</p>
           </div>
         </div>
       )}
@@ -326,8 +326,8 @@ function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: st
             </select>
           </div>
           <div>
-            <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Update Mileage</label>
-            <input required name="mileage" type="number" min="0" value={listing.mileage} onChange={handleChange} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-[#ff5a20] transition-colors" />
+            <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Mileage {hasBids && '🔒'}</label>
+            <input required name="mileage" type="number" min="0" value={listing.mileage} onChange={handleChange} disabled={hasBids} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-[#ff5a20] transition-colors disabled:opacity-50" />
           </div>
           <div>
             <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Update Location</label>
