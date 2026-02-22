@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import BidCard from '../../components/BidCard'; 
 import CommentsSection from '../../components/CommentsSection'; // 1. Imported the new Q&A component
 import { Suspense } from 'react';
+import ReviewSeller from '../../components/ReviewSeller';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -41,6 +42,11 @@ async function ListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: 
   return (
     <div className="w-full flex flex-col items-center gap-12">
       <BidCard listing={listing} />
+      <ReviewSeller 
+        listingId={listing.id} 
+        sellerId={listing.seller_id} 
+        endDate={listing.ends_at} 
+      />
       <CommentsSection listingId={listing.id} sellerId={listing.seller_id} />
     </div>
   );
