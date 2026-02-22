@@ -3,9 +3,11 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import SignOutButton from './SignOutButton';
 import { Suspense } from 'react';
+import MobileMenu from './MobileMenu';
 
-// 1. Isolate the dynamic cookie reading into its own async component
-async function NavbarAuth() {
+// Isolate the dynamic cookie reading into its own async component
+// 1. Upgraded to accept an `isMobile` flag for conditional CSS styling
+async function NavbarAuth({ isMobile }: { isMobile?: boolean }) {
   const cookieStore = await cookies();
   
   const supabase = createServerClient(
@@ -26,29 +28,72 @@ async function NavbarAuth() {
       <>
         <Link 
           href="/browse" 
-          className="bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm tracking-wide uppercase"
+          className={isMobile 
+            ? "text-white font-extrabold text-2xl uppercase tracking-tight hover:text-[#ff5a20] transition-colors"
+            : "bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm tracking-wide uppercase"
+          }
         >
-          🔍 Search
+          {isMobile ? "Browse Auctions" : "🔍 Search"}
         </Link>
-        <Link href="/create" className="text-white text-sm font-bold tracking-wide hover:text-[#ff5a20] transition-colors">
-          SELL
+        <Link 
+          href="/create" 
+          className={isMobile
+            ? "text-white font-extrabold text-2xl uppercase tracking-tight hover:text-[#ff5a20] transition-colors"
+            : "text-white text-sm font-bold tracking-wide hover:text-[#ff5a20] transition-colors"
+          }
+        >
+          {isMobile ? "Sell a Motorcycle" : "SELL"}
         </Link>
-        <div className="w-px h-4 bg-white/20 mx-2"></div>
-        <Link href="/dashboard" className="text-white text-sm font-bold tracking-wide hover:text-[#ff5a20] transition-colors">
+        
+        {isMobile ? <div className="h-px bg-white/10 w-full my-2"></div> : <div className="w-px h-4 bg-white/20 mx-2"></div>}
+        
+        <Link 
+          href="/dashboard" 
+          className={isMobile
+            ? "text-white font-extrabold text-2xl uppercase tracking-tight hover:text-[#ff5a20] transition-colors"
+            : "text-white text-sm font-bold tracking-wide hover:text-[#ff5a20] transition-colors"
+          }
+        >
           MY GARAGE
         </Link>
-        <div className="w-px h-4 bg-white/20"></div> 
-        <SignOutButton />
+        
+        {isMobile ? null : <div className="w-px h-4 bg-white/20"></div>}
+        
+        <div className={isMobile ? "mt-4" : ""}>
+           <SignOutButton />
+        </div>
       </>
     );
   }
 
+  // Logged out state (Added a Browse link here so buyers can search without logging in)
   return (
     <>
-      <Link href="/login" className="text-white/70 hover:text-white text-sm font-bold tracking-wide transition-colors">
+      <Link 
+        href="/browse" 
+        className={isMobile 
+          ? "text-white font-extrabold text-2xl uppercase tracking-tight hover:text-[#ff5a20] transition-colors"
+          : "text-white/80 hover:text-white text-sm font-bold tracking-wide transition-colors"
+        }
+      >
+        {isMobile ? "Browse Auctions" : "BROWSE"}
+      </Link>
+      <Link 
+        href="/login" 
+        className={isMobile
+          ? "text-white/70 font-bold text-lg uppercase tracking-widest hover:text-white transition-colors"
+          : "text-white/70 hover:text-white text-sm font-bold tracking-wide transition-colors"
+        }
+      >
         SIGN IN
       </Link>
-      <Link href="/login" className="bg-[#ff5a20] hover:bg-[#ff4500] text-white text-sm font-bold px-5 py-2.5 rounded-full transition-colors">
+      <Link 
+        href="/login" 
+        className={isMobile
+          ? "text-[#ff5a20] font-extrabold text-2xl uppercase tracking-tight hover:text-[#ff4500] transition-colors"
+          : "bg-[#ff5a20] hover:bg-[#ff4500] text-white text-sm font-bold px-5 py-2.5 rounded-full transition-colors"
+        }
+      >
         REGISTER
       </Link>
     </>
@@ -66,12 +111,29 @@ export default function Navbar() {
           FLY&<span className="text-[#ff5a20]">RIDE</span>
         </Link>
 
-        {/* Dynamic Navigation Links wrapped in Suspense */}
-        <div className="flex items-center gap-6">
+        {/* DESKTOP VIEW: Hidden on mobile */}
+        <div className="hidden md:flex items-center gap-6">
           <Suspense fallback={<div className="h-4 w-24 bg-white/10 animate-pulse rounded"></div>}>
             <NavbarAuth />
           </Suspense>
         </div>
+
+        {/* MOBILE VIEW: Hidden on desktop, wraps the server component in the client dropdown */}
+        <div className="md:hidden flex items-center">
+          <Suspense fallback={
+            <button className="text-white p-2">
+              {/* Ghost Hamburger icon while loading */}
+              <svg className="h-8 w-8 opacity-50 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          }>
+            <MobileMenu>
+               <NavbarAuth isMobile={true} />
+            </MobileMenu>
+          </Suspense>
+        </div>
+
       </div>
     </nav>
   );

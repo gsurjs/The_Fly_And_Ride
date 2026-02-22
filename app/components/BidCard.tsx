@@ -293,10 +293,10 @@ export default function BidCard({ listing }: { listing: any }) {
             {errorMsg && <p className="text-red-400 text-xs font-bold text-right uppercase tracking-wider">{errorMsg}</p>}
             {successMsg && <p className="text-green-400 text-xs font-bold text-right uppercase tracking-wider">{successMsg}</p>}
             
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                <div>
-                  <button className="bg-white/90 text-black text-sm font-bold px-4 py-2 rounded-full mr-3">View Data</button>
-                  <span className="text-xs text-white/50 font-semibold tracking-wide">LAST 6 MONTHS</span>
+                   <button className="bg-white/90 text-black text-sm font-bold px-4 py-2 rounded-full mr-3">View Data</button>
+                   <span className="text-xs text-white/50 font-semibold tracking-wide">LAST 6 MONTHS</span>
                </div>
                
                {/* Only show the bid input if the auction is still active */}
@@ -337,7 +337,7 @@ export default function BidCard({ listing }: { listing: any }) {
         </div>
 
         {/* Specs Row (Formatting Restored!) */}
-        <div className="grid grid-cols-4 gap-4 bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
           <div>
             <p className="text-[10px] text-white/50 uppercase font-bold tracking-wider mb-1">Mileage</p>
             <p className="font-bold text-lg">{listing.mileage.toLocaleString()}</p>
