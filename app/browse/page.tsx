@@ -15,6 +15,9 @@ async function BrowseContent({ searchParamsPromise }: { searchParamsPromise: Pro
   const maxMileage = searchParams.max_mileage || '';
   const sort = searchParams.sort || 'ending_soon';
 
+  // THE MAGIC FLAG: True if the user came from the navbar search
+  const isSearchActive = !!q;
+
   const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -67,8 +70,11 @@ async function BrowseContent({ searchParamsPromise }: { searchParamsPromise: Pro
   return (
     <div className="flex flex-col lg:flex-row gap-8 w-full max-w-7xl mx-auto">
       
-      {/* LEFT COLUMN: The Filter Engine (Native HTML Form) */}
-      <aside className="w-full lg:w-80 flex-shrink-0">
+      {/* LEFT COLUMN: The Filter Engine 
+          - Normally DOM order 1.
+          - If searching: order-2 on mobile (pushes to bottom), lg:order-1 on desktop (keeps it on the left).
+      */}
+      <aside className={`w-full lg:w-80 flex-shrink-0 ${isSearchActive ? 'order-2 lg:order-1' : ''}`}>
         <form action="/browse" method="GET" className="bg-black/40 border border-white/10 rounded-3xl p-6 backdrop-blur-sm sticky top-24">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-extrabold text-white tracking-tight">Filters</h2>
@@ -135,11 +141,17 @@ async function BrowseContent({ searchParamsPromise }: { searchParamsPromise: Pro
         </form>
       </aside>
 
-      {/* RIGHT COLUMN: The Results Grid */}
-      <div className="flex-1">
+      {/* RIGHT COLUMN: The Results Grid 
+          - Normally DOM order 2.
+          - If searching: order-1 on mobile (pulls to top), lg:order-2 on desktop (keeps it on the right).
+      */}
+      <div className={`flex-1 ${isSearchActive ? 'order-1 lg:order-2' : ''}`}>
         <div className="mb-6 flex justify-between items-end border-b border-white/10 pb-4">
           <div>
-            <h1 className="text-3xl font-extrabold text-white tracking-tight">Active Marketplace</h1>
+            {/* Dynamic Header */}
+            <h1 className="text-3xl font-extrabold text-white tracking-tight">
+              {isSearchActive ? `Search Results for "${q}"` : "Active Marketplace"}
+            </h1>
             <p className="text-white/50 font-bold uppercase tracking-widest text-xs mt-1">
               {listings?.length || 0} {listings?.length === 1 ? 'Motorcycle' : 'Motorcycles'} Found
             </p>
