@@ -24,6 +24,12 @@ async function NavbarAuth() {
   if (user) {
     return (
       <>
+        <Link 
+          href="/browse" 
+          className="bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm tracking-wide uppercase"
+        >
+          🔍 Search
+        </Link>
         <Link href="/create" className="text-white text-sm font-bold tracking-wide hover:text-[#ff5a20] transition-colors">
           SELL
         </Link>
