@@ -30,20 +30,25 @@ export default function ReviewSeller({
 
   useEffect(() => {
     const checkEligibility = async () => {
+      console.log("--- REVIEW WIDGET DIAGNOSTICS ---");
+      
       // 1. Check if auction is actually over
       if (new Date(endDate).getTime() > new Date().getTime()) {
+        console.log("🛑 FAILED: Auction is not over yet.");
         setLoading(false);
         return; 
       }
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
+        console.log("🛑 FAILED: No user is currently logged in.");
         setLoading(false);
         return;
       }
+      console.log("✅ Logged in User ID:", user.id);
 
       // 2. Check if current user is the winning (highest) bidder
-      const { data: topBid } = await supabase
+      const { data: topBid, error: bidError } = await supabase
         .from('bids')
         .select('user_id')
         .eq('listing_id', listingId)
@@ -51,23 +56,32 @@ export default function ReviewSeller({
         .limit(1)
         .single();
 
-        if (!topBid || topBid.user_id !== user.id) {
-          setLoading(false);
-          return; // User didn't win, hide widget
-        }
+      console.log("📊 Top Bidder ID:", topBid?.user_id);
+      
+      if (bidError) console.error("Database Error fetching bids:", bidError);
 
-      // 3. Check if they already left a review for this listing
-      const { data: existingReview } = await supabase
+      if (!topBid || topBid.user_id !== user.id) {
+        console.log("🛑 FAILED: The logged-in user does not match the Top Bidder ID.");
+        setLoading(false);
+        return; 
+      }
+
+      // 3. Check if they already left a review
+      const { data: existingReview, error: reviewError } = await supabase
         .from('reviews')
         .select('id')
         .eq('listing_id', listingId)
         .eq('reviewer_id', user.id)
         .single();
 
-      if (!existingReview) {
-        setCanReview(true); // All checks passed! Reveal the button.
+      if (existingReview) {
+        console.log("🛑 FAILED: User already left a review for this listing.");
+        setLoading(false);
+        return;
       }
-      
+
+      console.log("🟢 SUCCESS: All checks passed. Revealing button.");
+      setCanReview(true); 
       setLoading(false);
     };
 
