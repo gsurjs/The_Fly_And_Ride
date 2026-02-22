@@ -186,7 +186,7 @@ export default function BidCard({ listing }: { listing: any }) {
         {/* Gallery */}
         <div className="flex flex-col gap-4">
           <div className="relative rounded-3xl overflow-hidden shadow-2xl h-[300px] sm:h-[400px] lg:h-[500px] w-full bg-black border border-white/10 group flex items-center justify-center">
-            <img src={activeImage} alt={`${listing.make} ${listing.model}`} className="object-cover w-full h-full opacity-90 transition-opacity duration-300" />
+            <img src={activeImage} alt={`${listing.make} ${listing.model}`} className="object-contain w-full h-full opacity-90 transition-opacity duration-300" />
             <div className="absolute top-4 left-4 flex gap-2">
               <button onClick={() => window.history.back()} className="bg-black/50 border border-white/10 backdrop-blur-md p-3 rounded-full hover:bg-white/20 transition text-white shadow-lg">←</button>
             </div>
