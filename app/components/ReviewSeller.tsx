@@ -51,9 +51,9 @@ export default function ReviewSeller({
         .limit(1)
         .single();
 
-      if (!topBid || topBid.user_id !== user.id) {
-        setLoading(false);
-        return; // User didn't win, hide widget
+        if (!topBid || topBid.user_id !== user.id) {
+          setLoading(false);
+          return; // User didn't win, hide widget
       }
 
       // 3. Check if they already left a review for this listing
