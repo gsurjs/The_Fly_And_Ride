@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import SignOutButton from './SignOutButton';
 import { Suspense } from 'react';
 import MobileMenu from './MobileMenu';
+import SearchButton from './SearchButton';
 
 // Isolate the dynamic cookie reading into its own async component
 // 1. Upgraded to accept an `isMobile` flag for conditional CSS styling
@@ -26,15 +27,7 @@ async function NavbarAuth({ isMobile }: { isMobile?: boolean }) {
   if (user) {
     return (
       <>
-        <Link 
-          href="/browse" 
-          className={isMobile 
-            ? "text-white font-extrabold text-2xl uppercase tracking-tight hover:text-[#ff5a20] transition-colors"
-            : "bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm tracking-wide uppercase"
-          }
-        >
-          {isMobile ? "Browse Auctions" : "🔍 Search"}
-        </Link>
+        <SearchButton isMobile={isMobile} />
         <Link 
           href="/create" 
           className={isMobile
@@ -69,15 +62,7 @@ async function NavbarAuth({ isMobile }: { isMobile?: boolean }) {
   // Logged out state (Added a Browse link here so buyers can search without logging in)
   return (
     <>
-      <Link 
-        href="/browse" 
-        className={isMobile 
-          ? "text-white font-extrabold text-2xl uppercase tracking-tight hover:text-[#ff5a20] transition-colors"
-          : "text-white/80 hover:text-white text-sm font-bold tracking-wide transition-colors"
-        }
-      >
-        {isMobile ? "Browse Auctions" : "BROWSE"}
-      </Link>
+      <SearchButton isMobile={isMobile} />
       <Link 
         href="/login" 
         className={isMobile
