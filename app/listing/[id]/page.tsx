@@ -5,6 +5,7 @@ import BidCard from '../../components/BidCard';
 import CommentsSection from '../../components/CommentsSection'; // 1. Imported the new Q&A component
 import { Suspense } from 'react';
 import ReviewSeller from '../../components/ReviewSeller';
+import SellerBadge from '../../components/SellerBadge';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -47,6 +48,7 @@ async function ListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: 
         endDate={listing.ends_at} 
       />
       <BidCard listing={listing} />
+      <SellerBadge sellerId={listing.seller_id} />
       <CommentsSection listingId={listing.id} sellerId={listing.seller_id} />
     </div>
   );
