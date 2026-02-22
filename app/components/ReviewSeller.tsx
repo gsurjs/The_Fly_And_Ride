@@ -131,7 +131,7 @@ export default function ReviewSeller({
   return (
     <>
       {/* THE TRIGGER BUTTON */}
-      <div className="bg-green-500/10 border border-green-500/20 p-6 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 backdrop-blur-sm">
+      <div className="w-full max-w-6xl bg-green-500/10 border border-green-500/20 p-6 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 backdrop-blur-sm">
         <div>
           <h3 className="text-green-400 font-extrabold text-lg uppercase tracking-tight">You won this auction!</h3>
           <p className="text-white/70 text-sm font-semibold">Help the community by rating your experience with the seller.</p>

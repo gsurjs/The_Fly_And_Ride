@@ -40,13 +40,13 @@ async function ListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: 
 
   // 3. Stack the BidCard and the new CommentsSection vertically
   return (
-    <div className="w-full flex flex-col items-center gap-12">
-      <BidCard listing={listing} />
+    <div className="w-full flex flex-col items-center gap-6">
       <ReviewSeller 
         listingId={listing.id} 
         sellerId={listing.seller_id} 
         endDate={listing.ends_at} 
       />
+      <BidCard listing={listing} />
       <CommentsSection listingId={listing.id} sellerId={listing.seller_id} />
     </div>
   );
