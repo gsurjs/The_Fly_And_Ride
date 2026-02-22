@@ -26,6 +26,7 @@ export default function BidCard({ listing }: { listing: any }) {
 
   const fallbackImage = "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=800";
   const [activeImage, setActiveImage] = useState(listing.image_url || fallbackImage);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const allImages = [listing.image_url || fallbackImage, ...(listing.gallery_urls || [])];
 
   const marketData = [
@@ -185,10 +186,26 @@ export default function BidCard({ listing }: { listing: any }) {
         
         {/* Gallery */}
         <div className="flex flex-col gap-4">
-          <div className="relative rounded-3xl overflow-hidden shadow-2xl h-[300px] sm:h-[400px] lg:h-[500px] w-full bg-black border border-white/10 group flex items-center justify-center">
-            <img src={activeImage} alt={`${listing.make} ${listing.model}`} className="object-contain w-full h-full opacity-90 transition-opacity duration-300" />
+          <div 
+            onClick={() => setIsLightboxOpen(true)}
+            className="relative rounded-3xl overflow-hidden shadow-2xl h-[300px] sm:h-[400px] lg:h-[500px] w-full bg-black border border-white/10 group flex items-center justify-center cursor-zoom-in">
+            {/* Reverted to object-cover for the cinematic fill */}
+            <img src={activeImage} alt={`${listing.make} ${listing.model}`} className="object-cover w-full h-full opacity-90 group-hover:opacity-100 transition-opacity duration-300" />
+            
+            {/* Back Button (Added e.stopPropagation() so clicking it doesn't open the image) */}
             <div className="absolute top-4 left-4 flex gap-2">
-              <button onClick={() => window.history.back()} className="bg-black/50 border border-white/10 backdrop-blur-md p-3 rounded-full hover:bg-white/20 transition text-white shadow-lg">←</button>
+              <button 
+                onClick={(e) => { e.stopPropagation(); window.history.back(); }} 
+                className="bg-black/50 border border-white/10 backdrop-blur-md p-3 rounded-full hover:bg-white/20 transition text-white shadow-lg">
+                ←
+              </button>
+            </div>
+
+            {/* Hint Icon: Shows a subtle expand icon on hover */}
+            <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none text-white shadow-lg">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+              </svg>
             </div>
           </div>
           {allImages.length > 1 && (
@@ -355,7 +372,29 @@ export default function BidCard({ listing }: { listing: any }) {
             <p className="font-bold text-lg text-[#ff5a20] tabular-nums text-nowrap">{timeLeft}</p>
           </div>
         </div>
+        {isLightboxOpen && (
+        <div 
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 p-4 backdrop-blur-xl animate-in fade-in duration-200 cursor-zoom-out"
+          onClick={() => setIsLightboxOpen(false)}
+        >
+          {/* Close Button */}
+          <button 
+            onClick={() => setIsLightboxOpen(false)}
+            className="absolute top-6 right-6 text-white bg-white/10 p-3 rounded-full hover:bg-white/30 transition-colors z-[210] border border-white/20"
+          >
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
 
+          {/* Uncropped Full Size Image */}
+          <img 
+            src={activeImage} 
+            alt={`${listing.make} Full View`} 
+            className="max-w-full max-h-full object-contain shadow-2xl rounded-lg"
+          />
+        </div>
+      )}
       </div>
     </div>
   );
