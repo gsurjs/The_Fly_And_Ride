@@ -54,7 +54,7 @@ export default function ReviewSeller({
         if (!topBid || topBid.user_id !== user.id) {
           setLoading(false);
           return; // User didn't win, hide widget
-      }
+        }
 
       // 3. Check if they already left a review for this listing
       const { data: existingReview } = await supabase
