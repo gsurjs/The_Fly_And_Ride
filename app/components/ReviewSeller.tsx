@@ -50,17 +50,17 @@ export default function ReviewSeller({
       // 2. Check if current user is the winning (highest) bidder
       const { data: topBid, error: bidError } = await supabase
         .from('bids')
-        .select('user_id')
+        .select('bidder_id')
         .eq('listing_id', listingId)
         .order('amount', { ascending: false })
         .limit(1)
         .single();
 
-      console.log("📊 Top Bidder ID:", topBid?.user_id);
+      console.log("📊 Top Bidder ID:", topBid?.bidder_id);
       
       if (bidError) console.error("Database Error fetching bids:", bidError);
 
-      if (!topBid || topBid.user_id !== user.id) {
+      if (!topBid || topBid.bidder_id !== user.id) {
         console.log("🛑 FAILED: The logged-in user does not match the Top Bidder ID.");
         setLoading(false);
         return; 
