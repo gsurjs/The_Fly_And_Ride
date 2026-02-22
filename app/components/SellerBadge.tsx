@@ -43,13 +43,14 @@ export default async function SellerBadge({ sellerId }: { sellerId: string }) {
       {/* Decorative background glow */}
       <div className="absolute top-0 right-0 w-64 h-64 bg-[#ff5a20]/10 rounded-full blur-3xl -z-10 pointer-events-none translate-x-1/2 -translate-y-1/2"></div>
 
-      <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
+      {/* HORIZONTAL ON MOBILE: Avatar + Text */}
+      <div className="flex flex-row items-center gap-4 md:gap-6 w-full md:w-auto text-left">
         {/* Avatar */}
-        <Link href={`/user/${sellerId}`} className="relative h-20 w-20 rounded-full overflow-hidden border-2 border-[#ff5a20] shadow-lg group flex-shrink-0 bg-black block">
+        <Link href={`/user/${sellerId}`} className="relative h-16 w-16 md:h-20 md:w-20 rounded-full overflow-hidden border-2 border-[#ff5a20] shadow-lg group flex-shrink-0 bg-black block">
           {profile.avatar_url ? (
             <img src={profile.avatar_url} alt={profile.username} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-[#ff5a20] to-orange-800 flex items-center justify-center text-3xl font-black text-white group-hover:scale-110 transition-transform duration-300">
+            <div className="w-full h-full bg-gradient-to-br from-[#ff5a20] to-orange-800 flex items-center justify-center text-2xl md:text-3xl font-black text-white group-hover:scale-110 transition-transform duration-300">
               {profile.username ? profile.username.charAt(0).toUpperCase() : '?'}
             </div>
           )}
