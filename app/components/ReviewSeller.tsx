@@ -131,14 +131,14 @@ export default function ReviewSeller({
   return (
     <>
       {/* THE TRIGGER BUTTON */}
-      <div className="w-full max-w-6xl bg-green-500/10 border border-green-500/20 p-6 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 backdrop-blur-sm">
-        <div>
+      <div className="w-full max-w-6xl bg-green-500/10 border border-green-500/20 p-5 md:p-6 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 backdrop-blur-sm">
+        <div className="text-left w-full">
           <h3 className="text-green-400 font-extrabold text-lg uppercase tracking-tight">You won this auction!</h3>
-          <p className="text-white/70 text-sm font-semibold">Help the community by rating your experience with the seller.</p>
+          <p className="text-white/70 text-xs sm:text-sm font-semibold">Help the community by rating your experience with the seller.</p>
         </div>
         <button 
           onClick={() => setIsOpen(true)}
-          className="bg-green-600 hover:bg-green-500 text-white px-6 py-3 rounded-xl font-bold tracking-wide transition-colors whitespace-nowrap shadow-lg shadow-green-900/20"
+          className="w-full sm:w-auto bg-green-600 hover:bg-green-500 text-white px-6 py-3 rounded-xl font-bold tracking-wide transition-colors whitespace-nowrap shadow-lg shadow-green-900/20"
         >
           Rate Seller
         </button>
