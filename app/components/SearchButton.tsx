@@ -67,9 +67,17 @@ export default function SearchButton({ isMobile }: { isMobile?: boolean }) {
                 className="w-full bg-transparent text-white text-xl md:text-2xl font-bold p-6 focus:outline-none placeholder:text-white/20"
               />
               
-              <div className="pr-6 flex items-center gap-3">
-                <button type="button" onClick={() => setIsOpen(false)} className="text-white/40 hover:text-white text-xs font-bold tracking-widest uppercase transition-colors">
-                  ESC
+              <div className="pr-6 flex items-center">
+                {/* UPGRADED: The "X" Close Button */}
+                <button 
+                  type="button" 
+                  onClick={() => setIsOpen(false)} 
+                  className="text-white/40 hover:text-red-500 bg-white/5 hover:bg-white/10 p-2 rounded-full transition-colors flex items-center justify-center"
+                  aria-label="Close search"
+                >
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
             </form>
