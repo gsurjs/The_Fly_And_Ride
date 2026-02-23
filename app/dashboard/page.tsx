@@ -152,8 +152,25 @@ async function DashboardContent({ searchParamsPromise }: { searchParamsPromise: 
                           alt={`${bike.make} ${bike.model}`}
                           className="object-cover w-full h-full opacity-80 group-hover:scale-105 transition-transform duration-500"
                         />
-                        <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-green-400 border border-white/10">
-                          {bike.title_status}
+                        <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-black/80 to-transparent"></div>
+                        
+                        <div className={`absolute top-3 left-3 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase shadow-lg border ${!bike.reserve_price || bike.reserve_price === 0 ? 'bg-green-500/90 text-white border-green-400/50' : 'bg-black/60 text-white/80 border-white/20'}`}>
+                          {!bike.reserve_price || bike.reserve_price === 0 ? 'No Reserve' : 'Reserve'}
+                        </div>
+                        <div className={`absolute top-3 right-3 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase shadow-lg border ${bike.title_status === 'Clean' ? 'bg-black/60 text-green-400 border-green-400/20' : 'bg-black/60 text-yellow-400 border-yellow-400/20'}`}>
+                          {bike.title_status} Title
+                        </div>
+
+                        {/* BOTTOM LEFT: Location */}
+                        <div className="absolute bottom-3 left-3 flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-1 rounded shadow-lg text-[10px] font-bold text-white/90 border border-white/10 z-10">
+                          <span className="text-[#ff5a20]">📍</span> {bike.location}
+                        </div>
+                        
+                        {/* BOTTOM RIGHT: Live Analytics */}
+                        <div className="absolute bottom-3 right-3 flex items-center gap-2 z-10">
+                          <div className="flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-1 rounded shadow-lg text-[10px] font-bold text-white/90 border border-white/10">
+                            <span className="text-white/50">👁️</span> {bike.views || 0}
+                          </div>
                         </div>
                       </div>
                       <div className="p-5 flex-grow flex flex-col justify-between">
@@ -193,17 +210,37 @@ async function DashboardContent({ searchParamsPromise }: { searchParamsPromise: 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {activeBidsList.map((bike: any) => (
                   <div key={bike.id} className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden hover:border-[#ff5a20]/50 transition-colors cursor-pointer flex flex-col group relative">
-                    <div className="absolute top-3 left-3 bg-[#ff5a20] text-white px-3 py-1 rounded-full text-[10px] font-black tracking-widest z-10 shadow-lg uppercase border border-[#ff5a20]/50">
-                      Your Max: ${bike.myHighestBid.toLocaleString()}
-                    </div>
                     <div className="h-48 bg-black relative overflow-hidden">
                       <img 
                         src={bike.image_url || "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=800"} 
                         alt={`${bike.make} ${bike.model}`}
                         className="object-cover w-full h-full opacity-80 group-hover:scale-105 transition-transform duration-500"
                       />
-                      <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-green-400 border border-white/10">
-                        {bike.title_status}
+                      <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-black/80 to-transparent"></div>
+
+                      <div className="absolute top-3 left-3 flex flex-col gap-2 z-10">
+                        <div className="bg-[#ff5a20] text-white px-3 py-1 rounded-full text-[10px] font-black tracking-widest shadow-lg uppercase border border-[#ff5a20]/50 w-fit">
+                          Your Max: ${bike.myHighestBid.toLocaleString()}
+                        </div>
+                        <div className={`backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase shadow-lg border w-fit ${!bike.reserve_price || bike.reserve_price === 0 ? 'bg-green-500/90 text-white border-green-400/50' : 'bg-black/60 text-white/80 border-white/20'}`}>
+                          {!bike.reserve_price || bike.reserve_price === 0 ? 'No Reserve' : 'Reserve'}
+                        </div>
+                      </div>
+
+                      <div className={`absolute top-3 right-3 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase shadow-lg border ${bike.title_status === 'Clean' ? 'bg-black/60 text-green-400 border-green-400/20' : 'bg-black/60 text-yellow-400 border-yellow-400/20'}`}>
+                        {bike.title_status} Title
+                      </div>
+
+                      {/* BOTTOM LEFT: Location */}
+                      <div className="absolute bottom-3 left-3 flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-1 rounded shadow-lg text-[10px] font-bold text-white/90 border border-white/10 z-10">
+                        <span className="text-[#ff5a20]">📍</span> {bike.location}
+                      </div>
+                        
+                      {/* BOTTOM RIGHT: Live Analytics */}
+                      <div className="absolute bottom-3 right-3 flex items-center gap-2 z-10">
+                        <div className="flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-1 rounded shadow-lg text-[10px] font-bold text-white/90 border border-white/10">
+                          <span className="text-white/50">👁️</span> {bike.views || 0}
+                        </div>
                       </div>
                     </div>
                     <div className="p-5 flex-grow flex flex-col justify-between">
@@ -245,17 +282,37 @@ async function DashboardContent({ searchParamsPromise }: { searchParamsPromise: 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {userListings?.map((bike: any) => (
                   <div key={bike.id} className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden hover:border-[#ff5a20]/50 transition-colors cursor-pointer flex flex-col group relative">
-                    <div className="absolute top-3 left-3 bg-white/10 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-bold z-10 shadow-lg border border-white/20">
-                      YOUR LISTING
-                    </div>
                     <div className="h-48 bg-black relative overflow-hidden">
                       <img 
                         src={bike.image_url || "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=800"} 
                         alt={`${bike.make} ${bike.model}`}
                         className="object-cover w-full h-full opacity-80 group-hover:scale-105 transition-transform duration-500"
                       />
-                      <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-green-400 border border-white/10">
-                        {bike.title_status}
+                      <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-black/80 to-transparent"></div>
+
+                      <div className="absolute top-3 left-3 flex flex-col gap-2 z-10">
+                        <div className="bg-white/10 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] font-black tracking-widest shadow-lg uppercase border border-white/20 w-fit">
+                          YOUR LISTING
+                        </div>
+                        <div className={`backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase shadow-lg border w-fit ${!bike.reserve_price || bike.reserve_price === 0 ? 'bg-green-500/90 text-white border-green-400/50' : 'bg-black/60 text-white/80 border-white/20'}`}>
+                          {!bike.reserve_price || bike.reserve_price === 0 ? 'No Reserve' : 'Reserve'}
+                        </div>
+                      </div>
+
+                      <div className={`absolute top-3 right-3 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase shadow-lg border ${bike.title_status === 'Clean' ? 'bg-black/60 text-green-400 border-green-400/20' : 'bg-black/60 text-yellow-400 border-yellow-400/20'}`}>
+                        {bike.title_status} Title
+                      </div>
+
+                      {/* BOTTOM LEFT: Location */}
+                      <div className="absolute bottom-3 left-3 flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-1 rounded shadow-lg text-[10px] font-bold text-white/90 border border-white/10 z-10">
+                        <span className="text-[#ff5a20]">📍</span> {bike.location}
+                      </div>
+                        
+                      {/* BOTTOM RIGHT: Live Analytics */}
+                      <div className="absolute bottom-3 right-3 flex items-center gap-2 z-10">
+                        <div className="flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-1 rounded shadow-lg text-[10px] font-bold text-white/90 border border-white/10">
+                          <span className="text-white/50">👁️</span> {bike.views || 0}
+                        </div>
                       </div>
                     </div>
                     <div className="p-5 flex-grow flex flex-col justify-between">
