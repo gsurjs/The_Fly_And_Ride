@@ -1,7 +1,6 @@
 'use client'; 
 import { useState, useEffect, useCallback } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
-import { BarChart, Bar, ResponsiveContainer, Tooltip } from 'recharts';
 import Link from 'next/link';
 
 const supabase = createBrowserClient(
@@ -28,13 +27,6 @@ export default function BidCard({ listing }: { listing: any }) {
   const [activeImage, setActiveImage] = useState(listing.image_url || fallbackImage);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const allImages = [listing.image_url || fallbackImage, ...(listing.gallery_urls || [])];
-
-  const marketData = [
-    { month: 'Aug', price: 19500 }, { month: 'Sep', price: 21000 }, 
-    { month: 'Oct', price: 20500 }, { month: 'Nov', price: 22500 },
-    { month: 'Dec', price: 23000 }, { month: 'Jan', price: 24500 },
-    { month: 'Feb', price: 24000 }
-  ];
 
   const fetchBids = useCallback(async () => {
     const { data: bidsData } = await supabase
@@ -192,7 +184,7 @@ export default function BidCard({ listing }: { listing: any }) {
             {/* Reverted to object-cover for the cinematic fill */}
             <img src={activeImage} alt={`${listing.make} ${listing.model}`} className="object-cover w-full h-full opacity-90 group-hover:opacity-100 transition-opacity duration-300" />
             
-            {/* Back Button (Added e.stopPropagation() so clicking it doesn't open the image) */}
+            {/* Back Button */}
             <div className="absolute top-4 left-4 flex gap-2">
               <button 
                 onClick={(e) => { e.stopPropagation(); window.history.back(); }} 
@@ -270,7 +262,7 @@ export default function BidCard({ listing }: { listing: any }) {
 
         {/* AUCTION RESOLUTION ENGINE */}
         <div className={`border rounded-2xl p-6 backdrop-blur-sm transition-all duration-500 ${isSold ? 'bg-green-500/10 border-green-500/30' : reserveNotMet ? 'bg-red-500/10 border-red-500/30' : 'bg-white/5 border-white/10'}`}>
-          <div className="flex justify-between items-center mb-10">
+          <div className="flex justify-between items-center mb-8">
             <span className="text-xs font-bold text-white/50 tracking-widest uppercase">
               {isSold ? ':: Final Selling Price' : reserveNotMet ? ':: Final Bid (Reserve Not Met)' : ':: Current Top Bid'}
             </span>
@@ -279,47 +271,42 @@ export default function BidCard({ listing }: { listing: any }) {
             </span>
           </div>
 
-          {/* Market Chart (Restored to always show!) */}
-          <div className="h-28 w-full mb-6">
-            <ResponsiveContainer width="100%" height={112}>
-              <BarChart data={marketData}>
-                <defs>
-                  <linearGradient id="barGradient" x1="0" y1="1" x2="0" y2="0">
-                    <stop offset="0%" stopColor="#ffffff" stopOpacity={0.1} />
-                    <stop offset="100%" stopColor="#ffffff" stopOpacity={0.5} />
-                  </linearGradient>
-                </defs>
-                <Tooltip cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }} content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      return (
-                        <div className="bg-black/90 border border-white/20 p-3 rounded-lg shadow-xl backdrop-blur-md">
-                          <p className="text-[#ff5a20] font-bold">${payload[0].value?.toLocaleString()}</p>
-                          <p className="text-white/50 text-xs uppercase tracking-wider">{payload[0].payload.month}</p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Bar dataKey="price" radius={[4, 4, 0, 0]} fill="url(#barGradient)" />
-              </BarChart>
-            </ResponsiveContainer>
+          {/* AUCTION ANALYTICS BANNERS */}
+          <div className="grid grid-cols-3 gap-3 md:gap-4 mb-8">
+            {/* BIDS PLACED */}
+            <div className="bg-black/40 border border-white/5 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-inner">
+              <span className="text-2xl md:text-3xl font-black text-white tracking-tighter">
+                {bidHistory.length || 0}
+              </span>
+              <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-white/40 mt-1">Bids Placed</span>
+            </div>
+            
+            {/* WATCHERS */}
+            <div className="bg-black/40 border border-white/5 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-inner">
+              <span className="text-2xl md:text-3xl font-black text-white tracking-tighter">
+                {listing.watchers || 0}
+              </span>
+              <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-white/40 mt-1">Watchers</span>
+            </div>
+
+            {/* VIEWS */}
+            <div className="bg-black/40 border border-white/5 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-inner">
+              <span className="text-2xl md:text-3xl font-black text-white tracking-tighter">
+                {listing.views || 0}
+              </span>
+              <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-white/40 mt-1">Total Views</span>
+            </div>
           </div>
 
           <div className="flex flex-col gap-3">
             {errorMsg && <p className="text-red-400 text-xs font-bold text-right uppercase tracking-wider">{errorMsg}</p>}
             {successMsg && <p className="text-green-400 text-xs font-bold text-right uppercase tracking-wider">{successMsg}</p>}
             
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-               <div>
-                   <button className="bg-white/90 text-black text-sm font-bold px-4 py-2 rounded-full mr-3">View Data</button>
-                   <span className="text-xs text-white/50 font-semibold tracking-wide">LAST 6 MONTHS</span>
-               </div>
-               
+            <div className="flex justify-end items-center gap-4">
                {/* Only show the bid input if the auction is still active */}
                {!isEnded && (
-                 <div className="flex gap-2">
-                   <input type="number" value={bidInput} onChange={(e) => setBidInput(e.target.value === '' ? '' : Number(e.target.value))} placeholder={`> ${currentBid}`} disabled={isBidding} className="w-32 bg-black/50 border border-white/20 rounded-xl px-4 py-2 text-white font-bold focus:outline-none focus:border-[#ff5a20] disabled:opacity-50" />
+                 <div className="flex gap-2 w-full sm:w-auto">
+                   <input type="number" value={bidInput} onChange={(e) => setBidInput(e.target.value === '' ? '' : Number(e.target.value))} placeholder={`> ${currentBid}`} disabled={isBidding} className="w-full sm:w-32 bg-black/50 border border-white/20 rounded-xl px-4 py-2 text-white font-bold focus:outline-none focus:border-[#ff5a20] disabled:opacity-50" />
                    <button onClick={handlePlaceBid} disabled={isBidding} className="bg-[#ff5a20] hover:bg-[#ff4500] disabled:opacity-50 transition-colors text-white font-extrabold px-6 py-2 rounded-xl shadow-lg shadow-[#ff5a20]/20 tracking-wide">
                      {isBidding ? '...' : 'BID'}
                    </button>
@@ -353,7 +340,7 @@ export default function BidCard({ listing }: { listing: any }) {
           )}
         </div>
 
-        {/* Specs Row (Formatting Restored!) */}
+        {/* Specs Row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
           <div>
             <p className="text-[10px] text-white/50 uppercase font-bold tracking-wider mb-1">Mileage</p>
@@ -372,6 +359,7 @@ export default function BidCard({ listing }: { listing: any }) {
             <p className="font-bold text-lg text-[#ff5a20] tabular-nums text-nowrap">{timeLeft}</p>
           </div>
         </div>
+        
         {isLightboxOpen && (
         <div 
           className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 p-4 backdrop-blur-xl animate-in fade-in duration-200 cursor-zoom-out"
