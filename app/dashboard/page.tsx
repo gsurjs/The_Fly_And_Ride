@@ -59,6 +59,33 @@ async function DashboardContent({ searchParamsPromise }: { searchParamsPromise: 
 
   return (
     <div className="w-full max-w-7xl mx-auto">
+      <div className="flex flex-col md:flex-row justify-between items-center bg-black/40 border border-white/10 p-6 md:p-8 rounded-3xl mb-10 backdrop-blur-sm shadow-xl mt-8">
+        <div className="text-center md:text-left mb-6 md:mb-0">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">My Garage</h1>
+          <p className="text-white/50 text-sm mt-2 font-semibold uppercase tracking-widest">Manage your listings, bids, and reputation</p>
+        </div>
+        
+        <div className="flex flex-wrap justify-center gap-4">
+          <Link 
+            href="/dashboard/profile" 
+            className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-6 py-3 rounded-xl font-bold transition-colors text-sm shadow-md flex items-center gap-2"
+          >
+            <span>⚙️</span> Edit Profile
+          </Link>
+          <Link 
+            href={`/user/${user.id}`} 
+            className="bg-white/10 hover:bg-white/20 border border-white/20 text-white px-6 py-3 rounded-xl font-bold transition-colors text-sm shadow-md flex items-center gap-2"
+          >
+            <span>👁️</span> View Public Page
+          </Link>
+          <Link 
+            href="/create" 
+            className="bg-[#ff5a20] hover:bg-[#ff4500] text-white px-6 py-3 rounded-xl font-bold transition-colors text-sm shadow-lg shadow-orange-900/20 flex items-center gap-2"
+          >
+            <span>➕</span> Sell Motorcycle
+          </Link>
+        </div>
+      </div>
       <h1 className="text-4xl font-bold mb-2">Welcome to your Garage</h1>
       <p className="text-white/50 mb-10">Logged in as: <span className="text-white font-bold">{profile?.username || user.email}</span></p>
       
