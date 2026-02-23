@@ -18,11 +18,12 @@ export default function SearchButton({ isMobile }: { isMobile?: boolean }) {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Route to the Browse page with the search query attached to the URL
-    if (query.trim()) {
-      router.push(`/browse?q=${encodeURIComponent(query)}`);
+    const cleanQuery = query.trim(); // Strip all rogue spaces from both ends
+    
+    if (cleanQuery) {
+      router.push(`/browse?q=${encodeURIComponent(cleanQuery)}`);
     } else {
-      router.push('/browse'); // If they just hit enter, show them everything
+      router.push('/browse'); 
     }
     setIsOpen(false);
     setQuery('');
@@ -63,12 +64,11 @@ export default function SearchButton({ isMobile }: { isMobile?: boolean }) {
                 type="text" 
                 placeholder="Search Make, Model, or Keyword..." 
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => setQuery(e.target.value.trimStart())} // Prevent leading spaces
                 className="w-full bg-transparent text-white text-xl md:text-2xl font-bold p-6 focus:outline-none placeholder:text-white/20"
               />
               
               <div className="pr-6 flex items-center">
-                {/* UPGRADED: The "X" Close Button */}
                 <button 
                   type="button" 
                   onClick={() => setIsOpen(false)} 
