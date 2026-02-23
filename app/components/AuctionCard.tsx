@@ -44,21 +44,43 @@ export default function AuctionCard({ bike }: { bike: any }) {
     <Link href={`/listing/${bike.id}`} className="group block h-full">
       <div className="bg-black/40 border border-white/10 rounded-2xl overflow-hidden hover:border-white/30 transition-all duration-300 flex flex-col h-full hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/50">
         
-        {/* Image Section*/}
+        {/* PREMIUM DATA-DENSE THUMBNAIL */}
         <div className="h-56 bg-black relative overflow-hidden">
           <img 
             src={bike.image_url || "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=800"} 
             alt={`${bike.make} ${bike.model}`}
             className="object-cover w-full h-full opacity-80 group-hover:scale-105 group-hover:opacity-100 transition-all duration-700"
           />
-          <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-black/80 to-transparent"></div>
+          {/* Dark gradient overlay to ensure text always pops */}
+          <div className="absolute bottom-0 left-0 w-full h-2/3 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
           
-          <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-white border border-white/10">
-            {bike.location}
+          {/* TOP LEFT: Reserve Status Badge */}
+          <div className={`absolute top-3 left-3 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase shadow-lg border ${!bike.reserve_price || bike.reserve_price === 0 ? 'bg-green-500/90 text-white border-green-400/50' : 'bg-black/60 text-white/80 border-white/20'}`}>
+            {!bike.reserve_price || bike.reserve_price === 0 ? 'No Reserve' : 'Reserve'}
+          </div>
+
+          {/* TOP RIGHT: Title Status */}
+          <div className={`absolute top-3 right-3 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase shadow-lg border ${bike.title_status === 'Clean' ? 'bg-black/60 text-green-400 border-green-400/20' : 'bg-black/60 text-yellow-400 border-yellow-400/20'}`}>
+            {bike.title_status} Title
+          </div>
+
+          {/* BOTTOM LEFT: Location */}
+          <div className="absolute bottom-3 left-3 flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-1 rounded shadow-lg text-[10px] font-bold text-white/90 border border-white/10">
+            <span className="text-[#ff5a20]">📍</span> {bike.location}
+          </div>
+          
+          {/* BOTTOM RIGHT: Live Analytics */}
+          <div className="absolute bottom-3 right-3 flex items-center gap-2">
+            <div className="flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-1 rounded shadow-lg text-[10px] font-bold text-white/90 border border-white/10">
+              <span className="text-white/50">👁️</span> {bike.views || 0}
+            </div>
+            <div className="flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-1 rounded shadow-lg text-[10px] font-bold text-white/90 border border-white/10">
+              <span className="text-white/50">🔨</span> {bike.bids?.length || 0}
+            </div>
           </div>
         </div>
         
-        {/* Details Section (Your exact code, with timer injected) */}
+        {/* Details Section */}
         <div className="p-5 flex-grow flex flex-col justify-between">
           <div>
             <div className="flex justify-between items-center mb-1">
@@ -72,7 +94,6 @@ export default function AuctionCard({ bike }: { bike: any }) {
           
           <div className="flex justify-between items-end pt-4 border-t border-white/10">
             <div>
-              {/* Swapped Title Status for the Live Timer to drive urgency */}
               <p className="text-[10px] text-white/50 uppercase font-bold tracking-wider mb-1">Time Left</p>
               <p className={`text-sm font-semibold tabular-nums ${timeLeft === 'Auction Ended' ? 'text-red-400' : 'text-white'}`}>
                 {timeLeft}
