@@ -248,7 +248,6 @@ export default function BidCard({ listing }: { listing: any }) {
         {/* Header (INFO Restored!) */}
         <div>
           <div className="flex justify-between items-start mb-2">
-            <p className="text-white/60 text-sm tracking-wider uppercase font-semibold">Back to Garage</p>
             <button onClick={toggleWatchlist} disabled={isWatchlistLoading} className={`text-sm font-bold px-4 py-2 rounded-full transition-colors border ${isWatchlisted ? 'bg-white/20 border-white/40 text-white hover:bg-white/10' : 'bg-transparent border-white/20 text-white/70 hover:text-white hover:border-white/60'}`}>
               {isWatchlistLoading ? '...' : isWatchlisted ? '★ SAVED' : '☆ SAVE TO GARAGE'}
             </button>
