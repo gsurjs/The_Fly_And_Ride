@@ -92,12 +92,12 @@ async function UserProfileContent({ paramsPromise }: { paramsPromise: Promise<{ 
       <div className="bg-black/40 border border-white/10 rounded-3xl overflow-hidden mb-10 shadow-2xl backdrop-blur-sm relative mt-16">
         
         {/* Decorative Background Banner */}
-        <div className="h-32 w-full bg-gradient-to-r from-black via-[#6b2a1a] to-[#ff5a20]/40 absolute top-0 left-0"></div>
+        <div className="h-32 w-full bg-gradient-to-r from-black via-[#6b2a1a] to-[#ff5a20]/40"></div>
 
-        <div className="p-8 md:p-12 relative z-10 flex flex-col md:flex-row items-center md:items-start gap-8 pt-16 md:pt-20">
+        <div className="px-8 pb-8 md:px-12 md:pb-12 relative z-10 flex flex-col md:flex-row items-center md:items-start gap-8">
           
-          {/* Avatar (Overlapping the banner) */}
-          <div className="h-32 w-32 md:h-40 md:w-40 bg-black rounded-full flex-shrink-0 border-4 border-[#ff5a20] shadow-2xl overflow-hidden -mt-24 md:-mt-28 relative z-20">
+          {/* Avatar: -mt-16 (64px) is exactly half of the h-32 (128px) banner, creating a perfect overlap */}
+          <div className="h-32 w-32 md:h-40 md:w-40 bg-black rounded-full flex-shrink-0 border-4 border-[#ff5a20] shadow-2xl overflow-hidden -mt-16 md:-mt-20 relative z-20 mx-auto md:mx-0">
             {profile.avatar_url ? (
               <img src={profile.avatar_url} alt={profile.username} className="w-full h-full object-cover" />
             ) : (
