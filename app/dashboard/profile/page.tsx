@@ -164,7 +164,9 @@ export default function EditProfilePage() {
           
           {/* Avatar Upload Section */}
           <div className="flex flex-col sm:flex-row items-center gap-6 bg-white/5 p-6 rounded-2xl border border-white/10">
-            <div className="h-28 w-28 rounded-full overflow-hidden bg-black border-2 border-[#ff5a20] shadow-lg flex-shrink-0 relative group">
+            
+            {/* This is now a <label> with htmlFor="avatar-upload" and cursor-pointer */}
+            <label htmlFor="avatar-upload" className="h-28 w-28 rounded-full overflow-hidden bg-black border-2 border-[#ff5a20] shadow-lg flex-shrink-0 relative group cursor-pointer">
               {displayImage ? (
                 <img src={displayImage} alt="Avatar Preview" className="h-full w-full object-cover" />
               ) : (
@@ -174,18 +176,20 @@ export default function EditProfilePage() {
               )}
               {/* Overlay for hovering */}
               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                 <span className="text-[10px] font-bold uppercase tracking-widest">Change</span>
+                 <span className="text-[10px] font-bold text-white uppercase tracking-widest">Change</span>
               </div>
-            </div>
+            </label>
             
             <div className="flex-1 text-center sm:text-left">
               <h3 className="text-lg font-bold mb-2">Profile Picture</h3>
               <p className="text-white/50 text-xs font-semibold mb-4">Recommended size: 400x400px. JPG, PNG, or WEBP.</p>
               <div className="relative inline-block">
-                <button type="button" className="bg-white/10 hover:bg-white/20 text-white font-bold py-2 px-6 rounded-full transition-colors text-sm border border-white/20">
+                <button type="button" className="bg-white/10 hover:bg-white/20 text-white font-bold py-2 px-6 rounded-full transition-colors text-sm border border-white/20 cursor-pointer">
                   Select Image
                 </button>
+                {/* Added id="avatar-upload" to link with the image label */}
                 <input 
+                  id="avatar-upload"
                   type="file" 
                   accept="image/jpeg, image/png, image/webp" 
                   onChange={handleAvatarChange} 
