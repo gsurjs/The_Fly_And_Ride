@@ -58,7 +58,7 @@ export default function Home() {
           The Premier <span className="text-[#ff5a20]">Motorcycle</span> Exchange
         </h1>
         <p className="text-white/60 text-lg md:text-xl max-w-2xl mx-auto font-medium tracking-wide">
-          Discover, bid on, and win exclusive two-wheeled machinery from verified sellers across the nation.
+          Discover, bid on, and win exclusive motorcycles from verified sellers across the nation.
         </p>
       </div>
 
