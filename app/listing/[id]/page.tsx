@@ -39,6 +39,12 @@ async function ListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: 
     notFound(); 
   }
 
+  // Securely tell Supabase to tick the database counter up by 1
+  await supabase.rpc('increment_listing_views', { listing_id: id });
+
+  // Optimistically update the local object so this user's view is reflected instantly on their screen
+  listing.views = (listing.views || 0) + 1;
+
   // 3. Stack the BidCard and the new CommentsSection vertically
   return (
     <div className="w-full flex flex-col items-center gap-6">
