@@ -9,7 +9,7 @@ async function BrowseContent({ searchParamsPromise }: { searchParamsPromise: Pro
   const searchParams = await searchParamsPromise;
   
   // Extract URL parameters
-  const q = searchParams.q || '';
+  const q = typeof searchParams.q === 'string' ? searchParams.q.trim() : '';
   const make = searchParams.make || '';
   const titleStatus = searchParams.title_status || '';
   const maxMileage = searchParams.max_mileage || '';
