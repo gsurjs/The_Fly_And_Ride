@@ -67,7 +67,7 @@ export default function Home() {
         <h1 className="text-3xl md:text-5xl font-extrabold text-white tracking-tighter mb-3 uppercase">
           The Premier <span className="text-[#ff5a20]">Motorcycle</span> Exchange
         </h1>
-        <p className="text-[#ff5a20] text-xs md:text-sm max-w-2xl mx-auto font-bold tracking-widest uppercase">
+        <p className="text-[#ffffff] text-xs md:text-sm max-w-2xl mx-auto font-bold tracking-widest uppercase">
           Discover, bid on, and win exclusive motorcycles from verified sellers across the nation.
         </p>
       </div>
