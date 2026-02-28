@@ -64,10 +64,10 @@ export default function Home() {
 
       {/* SLIMMED DOWN HERO HEADER */}
       <div className="w-full bg-black/80 border-y border-white/10 py-8 px-4 md:px-10 text-center mb-12 shadow-xl">
-        <h1 className="text-3xl md:text-5xl font-extrabold text-white tracking-tighter mb-3 uppercase">
+        <h1 className="text-3xl md:text-5xl font-extrabold text-white tracking-tighter mb-3">
           The Premier <span className="text-[#ff5a20]">Motorcycle</span> Exchange
         </h1>
-        <p className="text-[#ffffff] text-xs md:text-sm max-w-2xl mx-auto font-bold tracking-widest uppercase">
+        <p className="text-white/60 text-xs md:text-sm max-w-2xl mx-auto font-medium tracking-wide">
           Discover, bid on, and win exclusive motorcycles from verified sellers across the nation.
         </p>
       </div>
