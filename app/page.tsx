@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import Link from 'next/link'
 import { Suspense } from 'react'
 import AuctionCard from './components/AuctionCard'
+import FeaturedBanner from './components/FeaturedBanner';
 
 async function AuctionFeed() {
   const cookieStore = await cookies()
@@ -52,12 +53,21 @@ async function AuctionFeed() {
 export default function Home() {
   return (
     <main className="min-h-screen bg-[#6b2a1a] pb-20 font-sans">
-      {/* Hero Header */}
-      <div className="w-full bg-black/80 border-b border-white/10 pt-20 pb-16 px-4 md:px-10 text-center mb-12">
-        <h1 className="text-5xl md:text-7xl font-extrabold text-white tracking-tighter mb-6">
+
+      <Suspense fallback={
+        <div className="w-full max-w-screen-2xl mx-auto px-4 md:px-10 mt-10 mb-16 h-96 bg-black/20 animate-pulse rounded-3xl border border-white/5 flex items-center justify-center">
+          <span className="text-[#ff5a20] font-bold tracking-widest uppercase">Loading Featured Collection...</span>
+        </div>
+      }>
+        <FeaturedBanner />
+      </Suspense>
+
+      {/* SLIMMED DOWN HERO HEADER */}
+      <div className="w-full bg-black/80 border-y border-white/10 py-8 px-4 md:px-10 text-center mb-12 shadow-xl">
+        <h1 className="text-3xl md:text-5xl font-extrabold text-white tracking-tighter mb-3 uppercase">
           The Premier <span className="text-[#ff5a20]">Motorcycle</span> Exchange
         </h1>
-        <p className="text-white/60 text-lg md:text-xl max-w-2xl mx-auto font-medium tracking-wide">
+        <p className="text-[#ff5a20] text-xs md:text-sm max-w-2xl mx-auto font-bold tracking-widest uppercase">
           Discover, bid on, and win exclusive motorcycles from verified sellers across the nation.
         </p>
       </div>
