@@ -28,7 +28,7 @@ export default function CreateListing() {
     vin: '',
     make: '',
     model: '',
-    year: new Date().getFullYear(), 
+    year: 2026, 
     mileage: 0,
     location: '',
     title_status: 'Clean',
