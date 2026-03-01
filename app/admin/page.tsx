@@ -148,7 +148,7 @@ async function AdminDashboardContent() {
         </div>
         <div className="p-8">
           {!flaggedComments || flaggedComments.length === 0 ? (
-            <div className="text-center py-10 text-white/40 font-bold tracking-wide">Queue is clear.</div>
+            <div className="text-center py-10 text-white/40 font-bold tracking-wide">Queue is clear. Community is behaving.</div>
           ) : (
             <div className="flex flex-col gap-4">
               {flaggedComments.map((flag: any, idx: number) => {

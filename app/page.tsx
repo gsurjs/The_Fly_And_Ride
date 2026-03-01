@@ -23,6 +23,7 @@ async function AuctionFeed() {
   const { data: listings, error } = await supabase
     .from('listings')
     .select('*, bids(amount)')
+    .eq('status', 'active')
     .order('created_at', { ascending: false })
 
   if (error) {

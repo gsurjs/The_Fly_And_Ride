@@ -19,6 +19,7 @@ export default async function FeaturedBanner() {
     .from('listings')
     .select('*, bids(amount)')
     .eq('featured', true)
+    .eq('status', 'active')
     .gt('ends_at', new Date().toISOString()) // Only show active auctions
     .order('ends_at', { ascending: true }) // Show ending soonest first
     .limit(5); // Fetch top 5 for the carousel
