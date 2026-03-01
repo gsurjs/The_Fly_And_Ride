@@ -46,7 +46,7 @@ async function AdminDashboardContent() {
   // Fetch Active Listings Oversight (Top 5 most recent)
   const { data: activeListings } = await supabase
     .from('listings')
-    .select('id, make, model, year, title_status, ends_at')
+    .select('id, make, model, year, title_status, ends_at, featured')
     .gt('ends_at', new Date().toISOString())
     .order('created_at', { ascending: false })
     .limit(5);
@@ -141,7 +141,7 @@ async function AdminDashboardContent() {
               {activeListings?.map(bike => (
                 <div key={bike.id} className="bg-black/50 border border-white/10 rounded-xl p-4 flex justify-between items-center">
                   <div>
-                    <p className="text-white font-bold">{bike.year} {bike.make} {bike.model}</p>
+                    <p className="text-white font-bold">{bike.year} {bike.make} {bike.model} {bike.featured && <span className="bg-[#ff5a20] text-white text-[9px] px-1.5 py-0.5 rounded uppercase font-black">FEATURED</span>}</p>
                     <p className="text-white/50 text-xs uppercase tracking-wider font-semibold mt-1">Title: {bike.title_status}</p>
                   </div>
                   <div className="flex gap-2">
