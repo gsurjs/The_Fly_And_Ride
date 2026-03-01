@@ -38,7 +38,7 @@ async function NavbarAuth({ isMobile }: { isMobile?: boolean }) {
       <>
         <SearchButton isMobile={isMobile} />
         
-        {/* 🟢 NEW: ADMIN LINK (ONLY VISIBLE IF ADMIN) 🟢 */}
+        {/* ADMIN LINK (ONLY VISIBLE IF ADMIN)*/}
         {isAdmin && (
           <>
             <Link 
