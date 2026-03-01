@@ -25,9 +25,35 @@ async function NavbarAuth({ isMobile }: { isMobile?: boolean }) {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (user) {
+    // Fetch the user's role to see if they are an admin
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .single();
+
+    const isAdmin = roleData?.role === 'admin';
+
     return (
       <>
         <SearchButton isMobile={isMobile} />
+        
+        {/* 🟢 NEW: ADMIN LINK (ONLY VISIBLE IF ADMIN) 🟢 */}
+        {isAdmin && (
+          <>
+            <Link 
+              href="/admin" 
+              className={isMobile
+                ? "text-red-400 font-extrabold text-2xl uppercase tracking-tight hover:text-red-300 transition-colors"
+                : "text-red-400 text-sm font-bold tracking-wide hover:text-red-300 transition-colors"
+              }
+            >
+              ADMIN
+            </Link>
+            {isMobile ? <div className="h-px bg-white/10 w-full my-2"></div> : <div className="w-px h-4 bg-white/20 mx-2"></div>}
+          </>
+        )}
+
         <Link 
           href="/create" 
           className={isMobile
@@ -59,7 +85,7 @@ async function NavbarAuth({ isMobile }: { isMobile?: boolean }) {
     );
   }
 
-  // Logged out state (Added a Browse link here so buyers can search without logging in)
+  // Logged out state
   return (
     <>
       <SearchButton isMobile={isMobile} />
@@ -107,7 +133,6 @@ export default function Navbar() {
         <div className="md:hidden flex items-center">
           <Suspense fallback={
             <button className="text-white p-2">
-              {/* Ghost Hamburger icon while loading */}
               <svg className="h-8 w-8 opacity-50 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
