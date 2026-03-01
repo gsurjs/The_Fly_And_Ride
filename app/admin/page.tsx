@@ -6,7 +6,7 @@ import Link from 'next/link';
 import AdminActionButtons from '../components/AdminActionButtons';
 import AdminCancelButton from '../components/AdminCancelButton';
 import AdminBanButton from '../components/AdminBanButton';
-import AdminFeatureButton from '../components/AdminFeatureButton';
+import AdminFeatureButton from '../components/AdminFeatureButton'; // Import your feature toggle
 
 async function AdminDashboardContent() {
   const cookieStore = await cookies();
@@ -44,7 +44,14 @@ async function AdminDashboardContent() {
     `)
     .order('created_at', { ascending: false });
 
-  // Fetch Active Listings Oversight (Top 5 most recent)
+  // Fetch Currently Featured Listings
+  const { data: featuredListings } = await supabase
+    .from('listings')
+    .select('id, make, model, year, title_status, ends_at, featured')
+    .eq('featured', true)
+    .order('ends_at', { ascending: true });
+
+  // Fetch Active Listings Oversight (Top 5 most recent to toggle them ON)
   const { data: activeListings } = await supabase
     .from('listings')
     .select('id, make, model, year, title_status, ends_at, featured')
@@ -90,7 +97,7 @@ async function AdminDashboardContent() {
         </div>
       </div>
 
-      {/* 1. Moderation Queue (RESTORED TO FULL DETAIL) */}
+      {/* Moderation Queue */}
       <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
         <div className="px-8 py-6 border-b border-white/10 bg-black/40">
           <h2 className="text-2xl font-extrabold text-white tracking-tight">Moderation Queue</h2>
@@ -130,9 +137,41 @@ async function AdminDashboardContent() {
         </div>
       </div>
 
+      {/* CURRENTLY FEATURED IN BANNER */}
+      <div className="bg-[#ff5a20]/10 border border-[#ff5a20]/30 rounded-3xl overflow-hidden shadow-2xl">
+        <div className="px-8 py-6 border-b border-[#ff5a20]/20 bg-black/40">
+          <h2 className="text-xl font-extrabold text-[#ff5a20] tracking-tight flex items-center gap-2">
+            <span>★</span> Currently Featured in Homepage Banner
+          </h2>
+        </div>
+        <div className="p-6">
+          {!featuredListings || featuredListings.length === 0 ? (
+            <p className="text-white/50 text-sm font-bold text-center py-4">No listings are currently featured.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {featuredListings.map(bike => (
+                <div key={bike.id} className="bg-black/60 border border-white/10 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div>
+                    <p className="text-white font-bold">{bike.year} {bike.make} {bike.model}</p>
+                    <p className="text-white/50 text-xs mt-1">Ends: {new Date(bike.ends_at).toLocaleDateString()}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Link href={`/listing/${bike.id}`} target="_blank" className="bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors">
+                      VIEW
+                    </Link>
+                    {/* Click this to turn it OFF */}
+                    <AdminFeatureButton listingId={bike.id} initialFeatured={bike.featured || false} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         
-        {/* 2. Active Auctions Oversight */}
+        {/* Active Auctions Oversight */}
         <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
           <div className="px-8 py-6 border-b border-white/10 bg-black/40">
             <h2 className="text-xl font-extrabold text-white tracking-tight">Live Auctions Oversight</h2>
@@ -140,15 +179,19 @@ async function AdminDashboardContent() {
           <div className="p-6">
             <div className="flex flex-col gap-3">
               {activeListings?.map(bike => (
-                <div key={bike.id} className="bg-black/50 border border-white/10 rounded-xl p-4 flex justify-between items-center">
+                <div key={bike.id} className="bg-black/50 border border-white/10 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <div>
-                    <p className="text-white font-bold">{bike.year} {bike.make} {bike.model} {bike.featured && <span className="bg-[#ff5a20] text-white text-[9px] px-1.5 py-0.5 rounded uppercase font-black">FEATURED</span>}</p>
+                    <p className="text-white font-bold flex items-center gap-2">
+                      {bike.year} {bike.make} {bike.model}
+                      {bike.featured && <span className="bg-[#ff5a20] text-white text-[9px] px-1.5 py-0.5 rounded uppercase font-black">FEATURED</span>}
+                    </p>
                     <p className="text-white/50 text-xs uppercase tracking-wider font-semibold mt-1">Title: {bike.title_status}</p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     <Link href={`/listing/${bike.id}`} target="_blank" className="bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors">
                       VIEW
                     </Link>
+                    {/* Click this to turn a new bike ON */}
                     <AdminFeatureButton listingId={bike.id} initialFeatured={bike.featured || false} />
                     <AdminCancelButton listingId={bike.id} />
                   </div>
@@ -158,7 +201,7 @@ async function AdminDashboardContent() {
           </div>
         </div>
 
-        {/* 3. User Roster */}
+        {/* User Roster */}
         <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
           <div className="px-8 py-6 border-b border-white/10 bg-black/40">
             <h2 className="text-xl font-extrabold text-white tracking-tight">Recent User Roster</h2>
