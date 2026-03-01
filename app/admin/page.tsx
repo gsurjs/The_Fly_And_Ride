@@ -6,6 +6,7 @@ import Link from 'next/link';
 import AdminActionButtons from '../components/AdminActionButtons';
 import AdminCancelButton from '../components/AdminCancelButton';
 import AdminBanButton from '../components/AdminBanButton';
+import AdminFeatureButton from '../components/AdminFeatureButton';
 
 async function AdminDashboardContent() {
   const cookieStore = await cookies();
@@ -148,6 +149,7 @@ async function AdminDashboardContent() {
                     <Link href={`/listing/${bike.id}`} target="_blank" className="bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors">
                       VIEW
                     </Link>
+                    <AdminFeatureButton listingId={bike.id} initialFeatured={bike.featured || false} />
                     <AdminCancelButton listingId={bike.id} />
                   </div>
                 </div>
