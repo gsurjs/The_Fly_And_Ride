@@ -6,7 +6,8 @@ import Link from 'next/link';
 import AdminActionButtons from '../components/AdminActionButtons';
 import AdminCancelButton from '../components/AdminCancelButton';
 import AdminBanButton from '../components/AdminBanButton';
-import AdminFeatureButton from '../components/AdminFeatureButton'; // Import your feature toggle
+import AdminFeatureButton from '../components/AdminFeatureButton'; // Import feature toggle
+import AdminApproveButton from '../components/AdminApproveButton';
 
 async function AdminDashboardContent() {
   const cookieStore = await cookies();
@@ -51,6 +52,13 @@ async function AdminDashboardContent() {
     .eq('featured', true)
     .order('ends_at', { ascending: true });
 
+  // Fetch Pending Listings for Moderation Queue
+  const { data: pendingListings } = await supabase
+    .from('listings')
+    .select('id, make, model, year, vin, created_at')
+    .eq('status', 'pending')
+    .order('created_at', { ascending: true }); // Oldest first
+
   // Fetch Active Listings Oversight (Top 5 most recent to toggle them ON)
   const { data: activeListings } = await supabase
     .from('listings')
@@ -94,6 +102,42 @@ async function AdminDashboardContent() {
             <h2 className="text-sm font-bold text-red-400 uppercase tracking-widest mb-2">Pending Flags</h2>
             <p className="text-4xl font-extrabold text-red-400">{flaggedComments?.length || 0}</p>
           </div>
+        </div>
+      </div>
+
+      {/* PENDING LISTINGS QUEUE */}
+      <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-3xl overflow-hidden shadow-2xl">
+        <div className="px-8 py-6 border-b border-yellow-500/20 bg-black/40">
+          <h2 className="text-xl font-extrabold text-yellow-500 tracking-tight flex items-center gap-2">
+            <span>⏳</span> Pending Listing Approvals
+          </h2>
+        </div>
+        <div className="p-6">
+          {!pendingListings || pendingListings.length === 0 ? (
+            <p className="text-white/50 text-sm font-bold text-center py-4">No new listings waiting for approval.</p>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {pendingListings.map(bike => (
+                <div key={bike.id} className="bg-black/60 border border-white/10 rounded-xl p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <div>
+                    <p className="text-white font-black text-lg">{bike.year} {bike.make} {bike.model}</p>
+                    <div className="flex gap-4 mt-1">
+                      <p className="text-white/50 text-xs font-bold uppercase tracking-widest">Submitted: {new Date(bike.created_at).toLocaleDateString()}</p>
+                      {/* Show the VIN directly in the admin dashboard */}
+                      <p className="text-yellow-500/70 text-xs font-bold uppercase tracking-widest">VIN: {bike.vin || 'Not Provided'}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    <Link href={`/listing/${bike.id}`} target="_blank" className="bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors border border-white/10">
+                      PREVIEW LISTING
+                    </Link>
+                    <AdminCancelButton listingId={bike.id} /> {/* Reuse your cancel button to "Reject/Delete" */}
+                    <AdminApproveButton listingId={bike.id} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

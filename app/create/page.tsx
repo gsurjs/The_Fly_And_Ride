@@ -14,13 +14,12 @@ export default function CreateListing() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   
-  // UPGRADED: Image Upload State (Arrays for multiple files)
+  // Success State
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-
-  // State to track which item is currently being dragged
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
-
   const [maxYear, setMaxYear] = useState(2027); 
 
   const [formData, setFormData] = useState({
@@ -32,6 +31,7 @@ export default function CreateListing() {
     title_status: 'Clean',
     reserve_price: 0,
     duration_days: 7,
+    vin: '', // Added VIN to state
   });
 
   useEffect(() => {
@@ -44,7 +44,6 @@ export default function CreateListing() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // UPGRADED: Processes up to 5 images, including HEIC conversion & compression
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
 
@@ -54,38 +53,24 @@ export default function CreateListing() {
       return;
     }
 
-    // Convert FileList to Array and cap at 5 images
     const filesArray = Array.from(e.target.files).slice(0, remainingSlots);
-    
     const processedFiles: File[] = [];
     const newPreviewUrls: string[] = [];
 
     for (let file of filesArray) {
       try {
-        // 1. Intercept iPhone HEIC/HEIF files
         if (file.type === 'image/heic' || file.name.toLowerCase().endsWith('.heic')) {
           const heic2any = (await import('heic2any')).default; 
-          
           const convertedBlob = await heic2any({
             blob: file,
             toType: 'image/jpeg',
             quality: 0.8,
           });
-          
           const finalBlob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
-          
-          file = new File([finalBlob], file.name.replace(/\.heic$/i, '.jpg'), {
-            type: 'image/jpeg',
-          });
+          file = new File([finalBlob], file.name.replace(/\.heic$/i, '.jpg'), { type: 'image/jpeg' });
         }
 
-        // 2. Run existing cost-saving compression
-        const options = {
-          maxSizeMB: 1, 
-          maxWidthOrHeight: 1920,
-          useWebWorker: true,
-        };
-        
+        const options = { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true };
         const compressedFile = await imageCompression(file, options);
         processedFiles.push(compressedFile);
         newPreviewUrls.push(URL.createObjectURL(compressedFile)); 
@@ -96,45 +81,37 @@ export default function CreateListing() {
       }
     }
 
-    // Append to existing arrays instead of overwriting
     setImageFiles(prev => [...prev, ...processedFiles]);
     setPreviewUrls(prev => [...prev, ...newPreviewUrls]);
   };
 
-  // Remove a specific image
   const removeImage = (indexToRemove: number) => {
     setImageFiles(prev => prev.filter((_, idx) => idx !== indexToRemove));
     setPreviewUrls(prev => {
-      URL.revokeObjectURL(prev[indexToRemove]); // Clean up memory
+      URL.revokeObjectURL(prev[indexToRemove]);
       return prev.filter((_, idx) => idx !== indexToRemove);
     });
   };
 
-  // Drag and Drop Handlers for Reordering
   const handleDragStart = (e: React.DragEvent, index: number) => {
     setDraggedIdx(index);
     e.dataTransfer.effectAllowed = 'move';
   };
 
   const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault(); // Necessary to allow dropping
+    e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
   };
 
   const handleDrop = (e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
     if (draggedIdx === null || draggedIdx === dropIndex) return;
-
     const newFiles = [...imageFiles];
     const newPreviews = [...previewUrls];
-
-    // Remove the dragged item and insert it at the drop index
     const [draggedFile] = newFiles.splice(draggedIdx, 1);
     newFiles.splice(dropIndex, 0, draggedFile);
-
     const [draggedPreview] = newPreviews.splice(draggedIdx, 1);
     newPreviews.splice(dropIndex, 0, draggedPreview);
-
     setImageFiles(newFiles);
     setPreviewUrls(newPreviews);
     setDraggedIdx(null);
@@ -151,8 +128,14 @@ export default function CreateListing() {
       return;
     }
 
+    // Basic VIN validation (17 chars)
+    if (formData.vin.trim().length !== 17) {
+      setErrorMsg("Please enter a valid 17-character VIN.");
+      setLoading(false);
+      return;
+    }
+
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
     if (authError || !user) {
       setErrorMsg("Authentication failed. Please log in again.");
       setLoading(false);
@@ -161,35 +144,21 @@ export default function CreateListing() {
 
     try {
       const uploadedUrls: string[] = [];
-
-      // UPGRADED: Loop through all files and upload them
       for (const file of imageFiles) {
         const fileExt = file.name.split('.').pop();
         const fileName = `${user.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
         const filePath = `${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('motorcycles')
-          .upload(filePath, file);
-
+        const { error: uploadError } = await supabase.storage.from('motorcycles').upload(filePath, file);
         if (uploadError) throw uploadError;
-
-        const { data: publicUrlData } = supabase.storage
-          .from('motorcycles')
-          .getPublicUrl(filePath);
-
+        const { data: publicUrlData } = supabase.storage.from('motorcycles').getPublicUrl(filePath);
         uploadedUrls.push(publicUrlData.publicUrl);
       }
 
-      // Split the URLs: First is the main hero image, the rest go to the gallery array
       const mainImageUrl = uploadedUrls[0];
       const galleryUrls = uploadedUrls.slice(1);
-
-      // Prepare date logic
       const endsAt = new Date();
       endsAt.setDate(endsAt.getDate() + Number(formData.duration_days));
 
-      // Insert the listing data
       const { error: insertError } = await supabase
         .from('listings')
         .insert([
@@ -204,20 +173,44 @@ export default function CreateListing() {
             reserve_price: Number(formData.reserve_price),
             ends_at: endsAt.toISOString(),
             image_url: mainImageUrl, 
-            gallery_urls: galleryUrls, // Add the gallery array to the database
+            gallery_urls: galleryUrls,
+            vin: formData.vin.toUpperCase(), // Save VIN as uppercase
+            status: 'pending' // Force pending status
           }
         ]);
 
       if (insertError) throw insertError;
 
-      router.push('/dashboard');
-      router.refresh(); 
+      // Show success screen instead of instant redirect
+      setIsSubmitted(true);
+      setLoading(false);
 
     } catch (err: any) {
       setErrorMsg(`Error processing listing: ${err.message}`);
       setLoading(false);
     }
   };
+
+  // Success Screen UI
+  if (isSubmitted) {
+    return (
+      <main className="min-h-screen bg-[#6b2a1a] p-4 md:p-10 font-sans flex justify-center items-center">
+        <div className="w-full max-w-xl bg-black/80 p-8 md:p-12 rounded-3xl border border-white/10 shadow-2xl backdrop-blur-md text-center">
+          <div className="text-6xl mb-6">⏳</div>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight mb-4">Listing Submitted!</h1>
+          <p className="text-white/70 mb-8 font-medium">
+            Your motorcycle has been sent to our moderation team for review. This ensures the highest quality and safety for the FLY&RIDE community. You will see it in your garage once approved.
+          </p>
+          <button 
+            onClick={() => { router.push('/dashboard'); router.refresh(); }}
+            className="bg-[#ff5a20] hover:bg-[#ff4500] text-white font-bold py-3 px-8 rounded-full transition-colors uppercase tracking-widest"
+          >
+            Go to My Garage
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#6b2a1a] p-4 md:p-10 font-sans flex justify-center">
@@ -233,7 +226,6 @@ export default function CreateListing() {
 
         <form onSubmit={handleSubmit} className="space-y-8 text-white">
           
-          {/* UPGRADED: Multi-Image Upload Dropzone & Previews */}
           <div className="flex flex-col gap-4">
             {imageFiles.length < 5 && (
               <div className="bg-white/5 border-2 border-dashed border-white/20 rounded-2xl p-6 text-center hover:border-[#ff5a20] transition-colors relative overflow-hidden group cursor-pointer">
@@ -255,7 +247,6 @@ export default function CreateListing() {
               </div>
             )}
 
-            {/* UPGRADED: Draggable Thumbnail Previews */}
             {previewUrls.length > 0 && (
               <div className="bg-black/40 p-4 rounded-2xl border border-white/10">
                 <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-3">
@@ -273,7 +264,6 @@ export default function CreateListing() {
                     >
                       <img src={url} alt={`Preview ${idx + 1}`} className="object-cover w-full h-full pointer-events-none" />
                       
-                      {/* Delete Button */}
                       <button
                         type="button"
                         onClick={() => removeImage(idx)}
@@ -294,8 +284,22 @@ export default function CreateListing() {
             )}
           </div>
 
-          {/* Form Fields Remain Completely Untouched */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* VIN Input Field */}
+            <div className="md:col-span-2">
+              <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">VIN (Vehicle Identification Number)</label>
+              <input 
+                required 
+                name="vin" 
+                type="text" 
+                placeholder="17-character VIN" 
+                maxLength={17}
+                value={formData.vin} 
+                onChange={handleChange}
+                className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-[#ff5a20] transition-colors uppercase font-mono" 
+              />
+            </div>
+
             <div>
               <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Make</label>
               <input required name="make" type="text" placeholder="e.g., Ducati" value={formData.make} onChange={handleChange}
