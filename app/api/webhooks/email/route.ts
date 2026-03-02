@@ -47,7 +47,7 @@ export async function POST(req: Request) {
         if (user?.email) {
           // Fire off the email!
           await transporter.sendMail({
-            from: '"FLY&RIDE" <noreply@flyandride.com>', // MUST match your SMTP_USER
+            from: '"FLY&RIDE" <noreply@theflyandride.com>', // MUST match your SMTP_USER
             to: user.email,
             subject: '✅ Your Motorcycle is LIVE on FLY&RIDE!',
             html: `
