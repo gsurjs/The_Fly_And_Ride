@@ -56,7 +56,7 @@ export async function POST(req: Request) {
                 <p style="font-size: 16px; line-height: 1.5;">Your <strong>${record.year} ${record.make} ${record.model}</strong> has been approved by our moderation team.</p>
                 <p style="font-size: 16px; line-height: 1.5;">Buyers can now view your listing, ask questions, and start bidding. Good luck with your auction!</p>
                 <br/>
-                <a href="https://flyandride.com/listing/${record.id}" style="display: inline-block; background-color: #ff5a20; color: white; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 8px; letter-spacing: 1px;">VIEW LIVE AUCTION</a>
+                <a href="https://theflyandride.com/listing/${record.id}" style="display: inline-block; background-color: #ff5a20; color: white; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 8px; letter-spacing: 1px;">VIEW LIVE AUCTION</a>
               </div>
             `,
           });
