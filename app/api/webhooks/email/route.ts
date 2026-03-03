@@ -43,13 +43,18 @@ export async function POST(req: Request) {
           await transporter.sendMail({
             from: FROM_EMAIL,
             to: user.email,
-            subject: '✅ Your Motorcycle is LIVE on FLY&RIDE!',
+            subject: `✅ Your ${record.year} ${record.make} is LIVE on FLY&RIDE!`,
             html: `
               <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background-color: #1a0a07; color: white; padding: 40px; border-radius: 16px;">
                 <h1 style="color: #ff5a20; margin-bottom: 8px;">Congratulations!</h1>
                 <p style="font-size: 16px; line-height: 1.5;">Your <strong>${record.year} ${record.make} ${record.model}</strong> has been approved by our moderation team.</p>
                 <p style="font-size: 16px; line-height: 1.5;">Buyers can now view your listing, ask questions, and start bidding. Good luck with your auction!</p>
-                <a href="https://flyandride.com/listing/${record.id}" style="display: inline-block; background-color: #ff5a20; color: white; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 8px; letter-spacing: 1px;">VIEW LIVE AUCTION</a>
+                <br/>
+                <a href="https://theflyandride.com/listing/${record.id}" style="display: inline-block; background-color: #ff5a20; color: white; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 8px; letter-spacing: 1px;">VIEW LIVE AUCTION</a>
+                
+                <div style="display: none; color: transparent; font-size: 0px; line-height: 0px;">
+                  Ref: ${new Date().getTime()}
+                </div>
               </div>
             `,
           });
