@@ -21,63 +21,19 @@ export default function BidCard({ listing }: { listing: any }) {
   const [isWatchlisted, setIsWatchlisted] = useState(false);
   const [isWatchlistLoading, setIsWatchlistLoading] = useState(false);
 
-  // Direct Messaging State
   const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
   const [messageText, setMessageText] = useState('');
   const [isSendingMessage, setIsSendingMessage] = useState(false);
 
-  // Bid Ledger State
   const [bidHistory, setBidHistory] = useState<any[]>([]);
 
   const fallbackImage = "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=800";
   const [activeImage, setActiveImage] = useState(listing.image_url || fallbackImage);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const allImages = [listing.image_url || fallbackImage, ...(listing.gallery_urls || [])];
-  const [openSection, setOpenSection] = useState<string | null>('Highlights');
 
-  // ACCORDIAN Style Data Structure
-  const listingDetails = [
-    {
-      id: 'Highlights',
-      title: 'Highlights',
-      content: `THIS... is a 2021 Porsche 718 Cayman GT4, finished in black with a black interior.\nThis coupe is equipped with the desirable 6-speed manual transmission, and its odometer displays about 14,400 miles.\nThe attached Carfax history report lists no mileage inconsistencies in this Cayman's past. It also shows that this Porsche has been registered in California since new.\nNotable modifications reported by the seller include a Dundon Motorsports Pro Tune with a COBB Tuning Accessport tuner, Dundon Motorsports mandrel-bent equal-length exhaust headers, a Valvetronic Designs titanium exhaust system, RSNV rear wing risers, and an aftermarket shift knob.\nA build sheet is provided in the gallery, and a partial list of notable equipment reported by the seller includes the Chrono Package, full bucket seats, Alcantara and leather upholstery, and a Bose surround sound system.\nIntroduced in 2020, the Porsche 718 Cayman GT4 featured an all-new naturally aspirated 4.0-liter flat-6 engine paired to either a 6-speed manual or a 7-speed PDK transmission, as well as a new aero package with up to 50% more downforce than the original GT4. Mix these all up with a further refined chassis, and the 718 Cayman GT4 proved to be 12 seconds quicker than its predecessor where it matters the most for a Porsche: the Nürburgring Nordschleife.\nPower comes from a 4.0-liter flat-6, rated at 414 horsepower and 309 lb-ft of torque in stock form. Due to the modifications performed to this Cayman, it may produce more power, but a dyno sheet was not provided to confirm. Output is sent to the rear wheels via a 6-speed manual transmission.`
-    },
-    {
-      id: 'Equipment',
-      title: 'Equipment',
-      content: `A build sheet is provided in the gallery, and a partial list of notable equipment reported by the seller includes:\n• Chrono Package (analog and digital stopwatch on the dashboard, performance display in the infotainment system, and more)\n• 20-inch wheels\n• Full bucket seats\n• Alcantara and leather upholstery\n• Bose surround sound system`
-    },
-    {
-      id: 'Modifications',
-      title: 'Modifications',
-      content: `Notable modifications reported by the seller include:\n\nMechanical:\n• Dundon Motorsports Pro Tune with COBB Tuning Accessport tuner\n• Dundon Motorsports mandrel-bent equal-length exhaust headers\n• Valvetronic Designs titanium exhaust system\n• BMC air filters\n\nExterior:\n• Cayman GT4 RS front bumper\n• Tinted side-marker lights\n• RSNV rear wing risers\n\nInterior:\n• Aftermarket shift knob`
-    },
-    {
-      id: 'Known Flaws',
-      title: 'Known Flaws',
-      content: `• The attached Carfax history report notes that this Cayman sustained "moderate damage" to its front, right-front, right-rear, and undercarriage after an accident in August 2024. The seller states that the front bumper was replaced following the accident.\n• Some scratches on the front splitter`
-    },
-    {
-      id: 'Recent Service History',
-      title: 'Recent Service History',
-      content: `The attached Carfax history report shows that the following services have been performed:\n• December 2025 (13,655 miles): Tire(s) mounted\n• July 2025 (12,204 miles): Tire(s) replaced\n• April 2025 (10,092 miles): Engine oil and filter changed\n• January 2025 (6,865 miles): Cooling system bled, four-wheel alignment performed\n• September 2021 (64 miles): Engine oil and filter changed, coolant flushed/changed`
-    },
-    {
-      id: 'Other Items Included',
-      title: 'Other Items Included in Sale',
-      content: `• 2 keys\n• Owner's manual\n• COBB Tuning Accessport tuner\n• EdGaurd seat bolster covers\n• Numeric Racing shift knob\n• Spare trim covers\n• Gas cap tether ring`
-    },
-    {
-      id: 'Ownership History',
-      title: 'Ownership History',
-      content: `The seller reportedly purchased this Cayman in June 2024 and has added about 8,200 miles since.`
-    },
-    {
-      id: 'Seller Notes',
-      title: 'Seller Notes',
-      content: `• The seller states that the windows are tinted.\n• Due to the modifications performed to this Cayman, it may not pass emissions testing in some states. As always, it's the buyer's responsibility to perform all due diligence regarding registering this car in their respective state prior to placing a bid.\n• There is a loan on this vehicle, and sale proceeds will be used to satisfy the loan. We recommend handling the loan payoff securely through Cars & Bids SafePay if agreed to by both the buyer and the seller. Please note that the title may only be available after the loan has been paid off.`
-    }
-  ];
+  // Feature Details Modal State
+  const [activeDetailModal, setActiveDetailModal] = useState<any>(null);
 
   // YouTube ID Extractor
   const getYouTubeId = (url: string) => {
@@ -247,6 +203,64 @@ export default function BidCard({ listing }: { listing: any }) {
     }
   };
 
+  // Dummy Data & Icon Helper for the Feature Tiles
+  const getIconForSection = (id: string) => {
+    switch(id) {
+      case 'Highlights': return '✨';
+      case 'Equipment': return '🛠️';
+      case 'Modifications': return '⚙️';
+      case 'Known Flaws': return '⚠️';
+      case 'Recent Service History': return '📅';
+      case 'Other Items Included': return '📦';
+      case 'Ownership History': return '👤';
+      case 'Seller Notes': return '📝';
+      default: return '📄';
+    }
+  };
+
+  const listingDetails = [
+    {
+      id: 'Highlights',
+      title: 'Highlights',
+      content: `THIS... is a 2021 Porsche 718 Cayman GT4, finished in black with a black interior.\n\nThis coupe is equipped with the desirable 6-speed manual transmission, and its odometer displays about 14,400 miles.\n\nThe attached Carfax history report lists no mileage inconsistencies in this Cayman's past. It also shows that this Porsche has been registered in California since new.\n\nNotable modifications reported by the seller include a Dundon Motorsports Pro Tune with a COBB Tuning Accessport tuner, Dundon Motorsports mandrel-bent equal-length exhaust headers, a Valvetronic Designs titanium exhaust system, RSNV rear wing risers, and an aftermarket shift knob.\n\nA build sheet is provided in the gallery, and a partial list of notable equipment reported by the seller includes the Chrono Package, full bucket seats, Alcantara and leather upholstery, and a Bose surround sound system.\n\nIntroduced in 2020, the Porsche 718 Cayman GT4 featured an all-new naturally aspirated 4.0-liter flat-6 engine paired to either a 6-speed manual or a 7-speed PDK transmission, as well as a new aero package with up to 50% more downforce than the original GT4. Mix these all up with a further refined chassis, and the 718 Cayman GT4 proved to be 12 seconds quicker than its predecessor where it matters the most for a Porsche: the Nürburgring Nordschleife.\n\nPower comes from a 4.0-liter flat-6, rated at 414 horsepower and 309 lb-ft of torque in stock form. Due to the modifications performed to this Cayman, it may produce more power, but a dyno sheet was not provided to confirm. Output is sent to the rear wheels via a 6-speed manual transmission.`
+    },
+    {
+      id: 'Equipment',
+      title: 'Equipment',
+      content: `A build sheet is provided in the gallery, and a partial list of notable equipment reported by the seller includes:\n\n• Chrono Package (analog and digital stopwatch on the dashboard, performance display in the infotainment system, and more)\n• 20-inch wheels\n• Full bucket seats\n• Alcantara and leather upholstery\n• Bose surround sound system`
+    },
+    {
+      id: 'Modifications',
+      title: 'Modifications',
+      content: `Notable modifications reported by the seller include:\n\nMechanical:\n• Dundon Motorsports Pro Tune with COBB Tuning Accessport tuner\n• Dundon Motorsports mandrel-bent equal-length exhaust headers\n• Valvetronic Designs titanium exhaust system\n• BMC air filters\n\nExterior:\n• Cayman GT4 RS front bumper\n• Tinted side-marker lights\n• RSNV rear wing risers\n\nInterior:\n• Aftermarket shift knob`
+    },
+    {
+      id: 'Known Flaws',
+      title: 'Known Flaws',
+      content: `• The attached Carfax history report notes that this Cayman sustained "moderate damage" to its front, right-front, right-rear, and undercarriage after an accident in August 2024. The seller states that the front bumper was replaced following the accident.\n• Some scratches on the front splitter`
+    },
+    {
+      id: 'Recent Service History',
+      title: 'Recent Service History',
+      content: `The attached Carfax history report shows that the following services have been performed:\n\n• December 2025 (13,655 miles): Tire(s) mounted\n• July 2025 (12,204 miles): Tire(s) replaced\n• April 2025 (10,092 miles): Engine oil and filter changed\n• January 2025 (6,865 miles): Cooling system bled, four-wheel alignment performed\n• September 2021 (64 miles): Engine oil and filter changed, coolant flushed/changed`
+    },
+    {
+      id: 'Other Items Included',
+      title: 'Other Items Included',
+      content: `• 2 keys\n• Owner's manual\n• COBB Tuning Accessport tuner\n• EdGaurd seat bolster covers\n• Numeric Racing shift knob\n• Spare trim covers\n• Gas cap tether ring`
+    },
+    {
+      id: 'Ownership History',
+      title: 'Ownership History',
+      content: `The seller reportedly purchased this Cayman in June 2024 and has added about 8,200 miles since.`
+    },
+    {
+      id: 'Seller Notes',
+      title: 'Seller Notes',
+      content: `• The seller states that the windows are tinted.\n• Due to the modifications performed to this Cayman, it may not pass emissions testing in some states. As always, it's the buyer's responsibility to perform all due diligence regarding registering this car in their respective state prior to placing a bid.\n• There is a loan on this vehicle, and sale proceeds will be used to satisfy the loan. We recommend handling the loan payoff securely through Cars & Bids SafePay if agreed to by both the buyer and the seller. Please note that the title may only be available after the loan has been paid off.`
+    }
+  ];
+
   const isEnded = timeLeft === 'Auction Ended';
   const hasBids = bidHistory.length > 0;
   const isSold = isEnded && hasBids && currentBid >= listing.reserve_price;
@@ -297,8 +311,7 @@ export default function BidCard({ listing }: { listing: any }) {
 
           {/* Thumbnails */}
           <div className="flex gap-3 overflow-x-auto py-2 custom-scrollbar items-center">
-            
-            {/* Video Thumbnail (Appears first if a video exists) */}
+            {/* Video Thumbnail */}
             {youtubeId && (
               <button 
                 onClick={() => setActiveImage('video')} 
@@ -310,8 +323,7 @@ export default function BidCard({ listing }: { listing: any }) {
                 </div>
               </button>
             )}
-
-            {/* Regular Image Thumbnails */}
+            {/* Regular Thumbnails */}
             {allImages.map((img, idx) => (
               <button 
                 key={idx} 
@@ -365,42 +377,9 @@ export default function BidCard({ listing }: { listing: any }) {
             </button>
           </div>
           <h1 className="text-5xl font-extrabold tracking-tight mb-4">{listing.make} <br /> <span className="text-[#ff5a20]">{listing.model}</span></h1>
-          
           <p className="text-sm text-white/80 leading-relaxed">
             <span className="text-white font-bold">INFO:</span> This unit comes with a {listing.title_status.toLowerCase()} title and is currently located in {listing.location}.
           </p>
-        </div>
-
-        {/* EXPANDABLE LISTING DETAILS SECTION */}
-        <div className="lg:col-span-2 mt-4 space-y-3">
-          {listingDetails.map((section) => {
-            const isOpen = openSection === section.id;
-            return (
-              <div key={section.id} className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden transition-all duration-300">
-                <button
-                  onClick={() => setOpenSection(isOpen ? null : section.id)}
-                  className="w-full flex items-center justify-between p-5 md:p-6 text-left hover:bg-white/5 transition-colors"
-                >
-                  <h3 className={`text-lg md:text-xl font-extrabold tracking-tight transition-colors ${isOpen ? 'text-[#ff5a20]' : 'text-white'}`}>
-                    {section.title}
-                  </h3>
-                  <span className={`text-[#ff5a20] font-black text-2xl transition-transform duration-300 ${isOpen ? 'rotate-45' : ''}`}>
-                    +
-                  </span>
-                </button>
-                
-                {/* Expandable Content Area */}
-                <div 
-                  className={`transition-all duration-300 ease-in-out ${isOpen ? 'max-h-[1000px] opacity-100 pb-6 px-5 md:px-6' : 'max-h-0 opacity-0 overflow-hidden px-5 md:px-6'}`}
-                >
-                  <div className="h-px w-full bg-white/10 mb-4"></div>
-                  <div className="text-white/80 text-sm md:text-base leading-relaxed whitespace-pre-wrap">
-                    {section.content}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
         </div>
 
         {/* AUCTION RESOLUTION ENGINE */}
@@ -414,25 +393,18 @@ export default function BidCard({ listing }: { listing: any }) {
             </span>
           </div>
 
+          {/* AUCTION ANALYTICS BANNERS */}
           <div className="grid grid-cols-3 gap-3 md:gap-4 mb-8">
             <div className="bg-black/40 border border-white/5 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-inner">
-              <span className="text-2xl md:text-3xl font-black text-white tracking-tighter">
-                {bidHistory.length || 0}
-              </span>
+              <span className="text-2xl md:text-3xl font-black text-white tracking-tighter">{bidHistory.length || 0}</span>
               <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-white/40 mt-1">Bids Placed</span>
             </div>
-            
             <div className="bg-black/40 border border-white/5 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-inner">
-              <span className="text-2xl md:text-3xl font-black text-white tracking-tighter">
-                {listing.watchers || 0}
-              </span>
+              <span className="text-2xl md:text-3xl font-black text-white tracking-tighter">{listing.watchers || 0}</span>
               <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-white/40 mt-1">Watchers</span>
             </div>
-
             <div className="bg-black/40 border border-white/5 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-inner">
-              <span className="text-2xl md:text-3xl font-black text-white tracking-tighter">
-                {listing.views || 0}
-              </span>
+              <span className="text-2xl md:text-3xl font-black text-white tracking-tighter">{listing.views || 0}</span>
               <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-white/40 mt-1">Total Views</span>
             </div>
           </div>
@@ -440,7 +412,6 @@ export default function BidCard({ listing }: { listing: any }) {
           <div className="flex flex-col gap-3">
             {errorMsg && <p className="text-red-400 text-xs font-bold text-right uppercase tracking-wider">{errorMsg}</p>}
             {successMsg && <p className="text-green-400 text-xs font-bold text-right uppercase tracking-wider">{successMsg}</p>}
-            
             <div className="flex justify-end items-center gap-4">
                {!isEnded && (
                  <div className="flex gap-2 w-full sm:w-auto">
@@ -453,6 +424,7 @@ export default function BidCard({ listing }: { listing: any }) {
             </div>
           </div>
 
+          {/* DYNAMIC END STATES */}
           {isSold && (
             <div className="text-center py-6 border-t border-green-500/20 mt-6 animate-pulse">
               <p className="text-green-400 font-extrabold text-2xl tracking-tight mb-2">
@@ -461,14 +433,12 @@ export default function BidCard({ listing }: { listing: any }) {
               <p className="text-white/60 text-sm font-semibold">The seller will contact the winning bidder shortly.</p>
             </div>
           )}
-
           {reserveNotMet && (
             <div className="text-center py-6 border-t border-red-500/20 mt-6">
               <p className="text-red-400 font-extrabold text-2xl tracking-tight mb-2">RESERVE NOT MET</p>
               <p className="text-white/60 text-sm font-semibold">The highest bid did not meet the seller's reserve price.</p>
             </div>
           )}
-
           {noBidsEnd && (
             <div className="text-center py-6 border-t border-white/10 mt-6">
               <p className="text-white font-extrabold text-2xl tracking-tight mb-2">AUCTION CLOSED</p>
@@ -506,68 +476,92 @@ export default function BidCard({ listing }: { listing: any }) {
             <span>💬</span> MESSAGE SELLER
           </button>
         )}
-        
-        {isLightboxOpen && (
-        <div 
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 p-4 backdrop-blur-xl animate-in fade-in duration-200 cursor-zoom-out"
-          onClick={() => setIsLightboxOpen(false)}
-        >
-          {/* Close Button */}
-          <button 
-            onClick={() => setIsLightboxOpen(false)}
-            className="absolute top-6 right-6 text-white bg-white/10 p-3 rounded-full hover:bg-white/30 transition-colors z-[210] border border-white/20"
-          >
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-
-          {/* Uncropped Full Size Image */}
-          <img 
-            src={activeImage} 
-            alt={`${listing.make} Full View`} 
-            className="max-w-full max-h-full object-contain shadow-2xl rounded-lg"
-          />
-        </div>
-      )}
       </div>
 
-      {/* DIRECT MESSAGE MODAL OVERLAY */}
+      {/* HORIZONTAL FEATURE TILES (Spans the bottom of the grid) */}
+      <div className="lg:col-span-2 mt-4 pt-8 border-t border-white/10">
+        <h3 className="text-sm font-bold text-white/50 uppercase tracking-widest mb-4">Detailed Vehicle Report</h3>
+        <div className="flex gap-3 overflow-x-auto pb-4 custom-scrollbar">
+          {listingDetails.map((section) => (
+            <button
+              key={section.id}
+              onClick={() => setActiveDetailModal(section)}
+              className="flex-shrink-0 w-36 h-28 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#ff5a20]/50 rounded-2xl flex flex-col items-center justify-center p-3 transition-all group relative overflow-hidden shadow-lg"
+            >
+              {/* Subtle hover glow inside the card */}
+              <div className="absolute -inset-1 bg-gradient-to-b from-[#ff5a20]/0 to-[#ff5a20]/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              
+              <span className="text-3xl mb-2 group-hover:scale-110 transition-transform group-hover:-translate-y-1 relative z-10">
+                {getIconForSection(section.id)}
+              </span>
+              <span className="text-xs font-bold text-white/80 group-hover:text-white text-center leading-tight relative z-10 tracking-wide">
+                {section.title}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* DETAIL READING MODAL */}
+      {activeDetailModal && (
+        <div className="fixed inset-0 z-[400] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md" onClick={() => setActiveDetailModal(null)}>
+          <div 
+            className="bg-[#1a0a07] border border-white/20 p-6 md:p-8 rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-[0_0_50px_rgba(255,90,32,0.15)] relative overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/10 shrink-0">
+              <h2 className="text-2xl md:text-3xl font-black text-white flex items-center gap-3 tracking-tight">
+                <span>{getIconForSection(activeDetailModal.id)}</span> {activeDetailModal.title}
+              </h2>
+              <button 
+                onClick={() => setActiveDetailModal(null)} 
+                className="text-white/50 hover:text-white bg-white/5 hover:bg-white/10 p-2.5 rounded-full transition-colors border border-transparent hover:border-white/20"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            {/* Scrollable Reading Content */}
+            <div className="overflow-y-auto custom-scrollbar pr-4 text-white/80 text-sm md:text-base leading-relaxed whitespace-pre-wrap font-medium">
+              {activeDetailModal.content}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ORIGINAL DIRECT MESSAGE MODAL */}
       {isMessageModalOpen && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="bg-[#1a0a07] border border-[#ff5a20]/30 p-6 md:p-8 rounded-3xl w-full max-w-lg shadow-[0_0_40px_rgba(255,90,32,0.15)] relative overflow-hidden">
-            
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[150%] h-24 bg-[#ff5a20]/20 blur-[50px] pointer-events-none"></div>
-
             <div className="relative z-10">
               <h2 className="text-2xl font-black text-white mb-2 tracking-tight">Message the Seller</h2>
               <p className="text-white/60 text-sm mb-6 font-medium">Ask about the {listing.year} {listing.make} {listing.model}, request specific photos, or discuss logistics.</p>
-
               <textarea
                 value={messageText}
                 onChange={(e) => setMessageText(e.target.value)}
                 placeholder="Hi, I'm highly interested in this bike. Could you tell me more about..."
                 className="w-full h-36 bg-black/50 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-[#ff5a20] transition-colors resize-none mb-6 text-sm"
               ></textarea>
-
               <div className="flex gap-3">
-                <button
-                  onClick={() => setIsMessageModalOpen(false)}
-                  disabled={isSendingMessage}
-                  className="flex-1 bg-white/5 hover:bg-white/10 text-white text-xs font-bold py-4 rounded-xl transition-colors disabled:opacity-50 uppercase tracking-widest"
-                >
-                  CANCEL
-                </button>
-                <button
-                  onClick={handleSendMessage}
-                  disabled={isSendingMessage || !messageText.trim()}
-                  className="flex-1 bg-[#ff5a20] hover:bg-[#ff4500] text-white text-xs font-bold py-4 rounded-xl transition-colors disabled:opacity-50 uppercase tracking-widest"
-                >
-                  {isSendingMessage ? 'SENDING...' : 'SEND MESSAGE'}
-                </button>
+                <button onClick={() => setIsMessageModalOpen(false)} disabled={isSendingMessage} className="flex-1 bg-white/5 hover:bg-white/10 text-white text-xs font-bold py-4 rounded-xl transition-colors disabled:opacity-50 uppercase tracking-widest">CANCEL</button>
+                <button onClick={handleSendMessage} disabled={isSendingMessage || !messageText.trim()} className="flex-1 bg-[#ff5a20] hover:bg-[#ff4500] text-white text-xs font-bold py-4 rounded-xl transition-colors disabled:opacity-50 uppercase tracking-widest">{isSendingMessage ? 'SENDING...' : 'SEND MESSAGE'}</button>
               </div>
             </div>
           </div>
+        </div>
+      )}
+      
+      {/* ORIGINAL LIGHTBOX */}
+      {isLightboxOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 p-4 backdrop-blur-xl animate-in fade-in duration-200 cursor-zoom-out" onClick={() => setIsLightboxOpen(false)}>
+          <button onClick={() => setIsLightboxOpen(false)} className="absolute top-6 right-6 text-white bg-white/10 p-3 rounded-full hover:bg-white/30 transition-colors z-[210] border border-white/20">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+          <img src={activeImage} alt={`${listing.make} Full View`} className="max-w-full max-h-full object-contain shadow-2xl rounded-lg" />
         </div>
       )}
     </div>
