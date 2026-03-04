@@ -154,6 +154,49 @@ export async function POST(req: Request) {
       }
     }
 
+    // =========================================================================
+    // SCENARIO 4: NEW DIRECT MESSAGE (User to User)
+    // =========================================================================
+    if (table === 'messages' && type === 'INSERT') {
+      
+      // We only want to send an email if the message hasn't been read yet
+      // (Supabase triggers this instantly, so it will always be unread initially)
+      
+      // 1. Get the Receiver's Email
+      const { data: { user: receiver } } = await supabaseAdmin.auth.admin.getUserById(record.receiver_id);
+      
+      // 2. Get the Listing info so we know what bike they are talking about
+      const { data: listing } = await supabaseAdmin
+        .from('listings')
+        .select('id, make, model, year')
+        .eq('id', record.listing_id)
+        .single();
+
+      if (receiver?.email && listing) {
+        await transporter.sendMail({
+          from: FROM_EMAIL,
+          to: receiver.email,
+          subject: `✉️ New Message about the ${listing.year} ${listing.make}`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background-color: #1a0a07; color: white; padding: 40px; border-radius: 16px;">
+              <h1 style="color: #ff5a20; margin-bottom: 8px;">You have a new message!</h1>
+              <p style="font-size: 16px; line-height: 1.5;">Another user sent you a direct message regarding the <strong>${listing.year} ${listing.make} ${listing.model}</strong>.</p>
+              
+              <div style="background-color: rgba(255,255,255,0.05); border-left: 4px solid #ff5a20; padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0; font-style: italic;">
+                "${record.content}"
+              </div>
+
+              <a href="https://theflyandride.com/inbox" style="display: inline-block; background-color: #ff5a20; color: white; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 8px; letter-spacing: 1px;">REPLY IN INBOX</a>
+              
+              <div style="display: none; color: transparent; font-size: 0px; line-height: 0px;">
+                Ref: ${new Date().getTime()}
+              </div>
+            </div>
+          `,
+        });
+      }
+    }
+
     return NextResponse.json({ success: true });
     
   } catch (error: any) {
