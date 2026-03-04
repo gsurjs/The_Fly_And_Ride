@@ -22,6 +22,9 @@ export default function CreateListing() {
   
   // IMPORTED / VINTAGE BIKE STATE
   const [isImported, setIsImported] = useState(false);
+  const [zipCode, setZipCode] = useState('');
+  const [isLocationLocked, setIsLocationLocked] = useState(false);
+  const [locationError, setLocationError] = useState('');
   
   // SECURE VERIFICATION PHOTO STATE
   const [framePhoto, setFramePhoto] = useState<{ file: File; url: string } | null>(null);
@@ -113,6 +116,38 @@ export default function CreateListing() {
       setVinError("Network error. Could not reach the VIN database.");
     }
     setIsDecoding(false);
+  };
+
+  // Location Verification Function
+  const verifyZipCode = async () => {
+    setLocationError('');
+    if (zipCode.trim().length !== 5) {
+      setLocationError('Please enter a valid 5-digit US Zip Code.');
+      return;
+    }
+
+    try {
+      // Free postal API to fetch City and State from a Zip Code
+      const response = await fetch(`https://api.zippopotam.us/us/${zipCode}`);
+      
+      if (!response.ok) {
+        setLocationError('Invalid US Zip Code. Please try again.');
+        setIsLocationLocked(false);
+        return;
+      }
+      
+      const data = await response.json();
+      const place = data.places[0];
+      
+      // Format it beautifully (e.g., "Beverly Hills, CA")
+      const formattedLocation = `${place['place name']}, ${place['state abbreviation']}`;
+      
+      setFormData(prev => ({ ...prev, location: formattedLocation }));
+      setIsLocationLocked(true);
+      
+    } catch (err) {
+      setLocationError('Network error. Could not verify Zip Code.');
+    }
   };
 
   // HELPER TO PROCESS ALL IMAGES (HEIC + Compression)
@@ -476,11 +511,60 @@ export default function CreateListing() {
                 className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-[#ff5a20] transition-colors" />
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Location</label>
-              <input required name="location" type="text" placeholder="e.g., Atlanta, GA" value={formData.location} onChange={handleChange}
-                className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-[#ff5a20] transition-colors" />
+            {/* Verified US Location Field */}
+            <div className="md:col-span-2 lg:col-span-1">
+              <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">
+                Location (US Only) {isLocationLocked && '🔒'}
+              </label>
+              <div className="flex gap-2">
+                {!isLocationLocked ? (
+                  <>
+                    <input 
+                      type="text" 
+                      placeholder="5-digit Zip Code" 
+                      maxLength={5}
+                      value={zipCode} 
+                      onChange={(e) => {
+                        // Only allow numbers
+                        setZipCode(e.target.value.replace(/[^0-9]/g, ''));
+                        setLocationError('');
+                      }}
+                      className="w-1/2 bg-white/5 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-[#ff5a20] transition-colors" 
+                    />
+                    <button 
+                      type="button" 
+                      onClick={verifyZipCode}
+                      disabled={zipCode.length !== 5}
+                      className="w-1/2 bg-white hover:bg-gray-200 text-black font-extrabold px-4 py-3 rounded-xl transition-colors disabled:opacity-50"
+                    >
+                      VERIFY
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <input 
+                      readOnly 
+                      type="text" 
+                      value={formData.location} 
+                      className="w-3/4 bg-green-500/10 border border-green-500/30 text-green-400 font-bold rounded-xl p-3 focus:outline-none cursor-not-allowed" 
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        setIsLocationLocked(false);
+                        setZipCode('');
+                        setFormData(prev => ({ ...prev, location: '' }));
+                      }}
+                      className="w-1/4 bg-red-500/20 hover:bg-red-500/40 text-red-400 border border-red-500/30 font-bold rounded-xl transition-colors"
+                    >
+                      RESET
+                    </button>
+                  </>
+                )}
+              </div>
+              {locationError && <p className="text-red-400 text-xs mt-2 font-bold">{locationError}</p>}
             </div>
+
             <div>
               <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Title Status</label>
               <select name="title_status" value={formData.title_status} onChange={handleChange}
