@@ -306,6 +306,7 @@ export default function CreateListing() {
         image_url: uploadedUrls[0], 
         gallery_urls: uploadedUrls.slice(1),
         vin: formData.vin.toUpperCase(),
+        video_url: formData.video_url,
         status: 'pending'
       };
 
