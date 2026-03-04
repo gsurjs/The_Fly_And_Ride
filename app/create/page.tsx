@@ -315,7 +315,15 @@ export default function CreateListing() {
         gallery_urls: uploadedUrls.slice(1),
         vin: formData.vin.toUpperCase(),
         video_url: formData.video_url,
-        status: 'pending'
+        status: 'pending',
+        highlights: formData.highlights,
+        equipment: formData.equipment,
+        modifications: formData.modifications,
+        known_flaws: formData.known_flaws,
+        recent_service_history: formData.recent_service_history,
+        other_items_included: formData.other_items_included,
+        ownership_history: formData.ownership_history,
+        seller_notes: formData.seller_notes
       };
 
       // Add the secure URLs to the payload if they exist
