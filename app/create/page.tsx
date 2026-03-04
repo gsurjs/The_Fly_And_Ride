@@ -45,6 +45,14 @@ export default function CreateListing() {
     reserve_price: 0,
     duration_days: 7,
     video_url: '',
+    highlights: '',
+    equipment: '',
+    modifications: '',
+    known_flaws: '',
+    recent_service_history: '',
+    other_items_included: '',
+    ownership_history: '',
+    seller_notes: ''
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
