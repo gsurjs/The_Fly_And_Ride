@@ -256,7 +256,15 @@ function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: st
           reserve_price: Number(listing.reserve_price),
           image_url: mainImageUrl,
           gallery_urls: galleryUrls,
-          video_url: listing.video_url // Update the video URL
+          video_url: listing.video_url, // Update the video URL
+          highlights: listing.highlights,
+          equipment: listing.equipment,
+          modifications: listing.modifications,
+          known_flaws: listing.known_flaws,
+          recent_service_history: listing.recent_service_history,
+          other_items_included: listing.other_items_included,
+          ownership_history: listing.ownership_history,
+          seller_notes: listing.seller_notes
         })
         .eq('id', listingId);
 
