@@ -577,6 +577,21 @@ export default function CreateListing() {
               </select>
             </div>
 
+            {/* YouTube Video Link Field */}
+            <div className="md:col-span-2">
+              <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2 flex items-center gap-2">
+                <span className="text-[#ff0000]">▶</span> YouTube Walkaround / Cold Start Link <span className="text-white/30 lowercase normal-case text-[10px]">(Optional)</span>
+              </label>
+              <input 
+                name="video_url" 
+                type="url" 
+                placeholder="e.g., https://www.youtube.com/watch?v=..." 
+                value={formData.video_url} 
+                onChange={handleChange}
+                className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-[#ff0000] transition-colors" 
+              />
+            </div>
+
             <div>
               <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Reserve Price ($)</label>
               <input required name="reserve_price" type="number" min="0" value={formData.reserve_price} onChange={handleChange}
