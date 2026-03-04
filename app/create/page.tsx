@@ -73,7 +73,7 @@ export default function CreateListing() {
 
     // If it's less than 17 characters, auto-switch immediately
     if (formData.vin.trim().length !== 17) {
-      enableImportMode("Standard VINs are 17 characters. We automatically switched you to Import / Vintage mode so you can upload your frame number.");
+      enableImportMode("Standard VINs are 17 characters. We automatically switched you to Import / Vintage mode so you can upload your frame number & paperwork.");
       return;
     }
 
