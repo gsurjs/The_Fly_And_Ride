@@ -44,6 +44,7 @@ export default function CreateListing() {
     title_status: 'Clean',
     reserve_price: 0,
     duration_days: 7,
+    video_url: '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
