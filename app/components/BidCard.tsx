@@ -34,6 +34,16 @@ export default function BidCard({ listing }: { listing: any }) {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const allImages = [listing.image_url || fallbackImage, ...(listing.gallery_urls || [])];
 
+  // YouTube ID Extractor
+  const getYouTubeId = (url: string) => {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
+
+  const youtubeId = getYouTubeId(listing.video_url);
+
   const fetchBids = useCallback(async () => {
     const { data: bidsData } = await supabase
       .from('bids')
@@ -71,7 +81,7 @@ export default function BidCard({ listing }: { listing: any }) {
 
     const fetchUserAndWatchlist = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUser(user); // Save to state so the message button knows who you are!
+      setCurrentUser(user); 
       
       if (user) {
         const { data } = await supabase.from('watchlist').select('id').eq('user_id', user.id).eq('listing_id', listing.id).single();
@@ -158,20 +168,18 @@ export default function BidCard({ listing }: { listing: any }) {
 
   const toggleWatchlist = async () => {
     setIsWatchlistLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { alert("Create an account to save vehicles to your Garage."); window.location.href = '/login'; return; }
+    if (!currentUser) { alert("Create an account to save vehicles to your Garage."); window.location.href = '/login'; return; }
 
     if (isWatchlisted) {
-      await supabase.from('watchlist').delete().eq('user_id', user.id).eq('listing_id', listing.id);
+      await supabase.from('watchlist').delete().eq('user_id', currentUser.id).eq('listing_id', listing.id);
       setIsWatchlisted(false);
     } else {
-      await supabase.from('watchlist').insert([{ user_id: user.id, listing_id: listing.id }]);
+      await supabase.from('watchlist').insert([{ user_id: currentUser.id, listing_id: listing.id }]);
       setIsWatchlisted(true);
     }
     setIsWatchlistLoading(false);
   };
 
-  // Send Direct Message Function
   const handleSendMessage = async () => {
     if (!messageText.trim() || !currentUser || !listing) return;
     setIsSendingMessage(true);
@@ -194,7 +202,6 @@ export default function BidCard({ listing }: { listing: any }) {
     }
   };
 
-  // Auction Resolution Logic
   const isEnded = timeLeft === 'Auction Ended';
   const hasBids = bidHistory.length > 0;
   const isSold = isEnded && hasBids && currentBid >= listing.reserve_price;
@@ -207,39 +214,69 @@ export default function BidCard({ listing }: { listing: any }) {
       {/* LEFT COLUMN: Image Gallery & Bid Ledger */}
       <div className="flex flex-col gap-6">
         
-        {/* Gallery */}
+        {/* Gallery & Video Player */}
         <div className="flex flex-col gap-4">
+          
+          {/* Main Viewer (Shows Image OR Video) */}
           <div 
-            onClick={() => setIsLightboxOpen(true)}
-            className="relative rounded-3xl overflow-hidden shadow-2xl h-[300px] sm:h-[400px] lg:h-[500px] w-full bg-black border border-white/10 group flex items-center justify-center cursor-zoom-in">
-            {/* Reverted to object-cover for the cinematic fill */}
-            <img src={activeImage} alt={`${listing.make} ${listing.model}`} className="object-cover w-full h-full opacity-90 group-hover:opacity-100 transition-opacity duration-300" />
+            onClick={() => activeImage !== 'video' && setIsLightboxOpen(true)}
+            className={`relative rounded-3xl overflow-hidden shadow-2xl h-[300px] sm:h-[400px] lg:h-[500px] w-full bg-black border border-white/10 group flex items-center justify-center ${activeImage !== 'video' ? 'cursor-zoom-in' : ''}`}>
             
-            {/* Back Button */}
-            <div className="absolute top-4 left-4 flex gap-2">
-              <button 
-                onClick={(e) => { e.stopPropagation(); window.history.back(); }} 
-                className="bg-black/50 border border-white/10 backdrop-blur-md p-3 rounded-full hover:bg-white/20 transition text-white shadow-lg">
-                ←
-              </button>
-            </div>
-
-            {/* Hint Icon: Shows a subtle expand icon on hover */}
-            <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none text-white shadow-lg">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-              </svg>
-            </div>
+            {activeImage === 'video' && youtubeId ? (
+              <iframe 
+                className="w-full h-full"
+                src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1`} 
+                title="YouTube video player" 
+                frameBorder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowFullScreen
+              ></iframe>
+            ) : (
+              <>
+                <img src={activeImage} alt={`${listing.make} ${listing.model}`} className="object-cover w-full h-full opacity-90 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute top-4 left-4 flex gap-2">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); window.history.back(); }} 
+                    className="bg-black/50 border border-white/10 backdrop-blur-md p-3 rounded-full hover:bg-white/20 transition text-white shadow-lg">
+                    ←
+                  </button>
+                </div>
+                <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none text-white shadow-lg">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                  </svg>
+                </div>
+              </>
+            )}
           </div>
-          {allImages.length > 1 && (
-            <div className="flex gap-3 overflow-x-auto py-2 custom-scrollbar">
-              {allImages.map((img, idx) => (
-                <button key={idx} onClick={() => setActiveImage(img)} className={`flex-shrink-0 relative w-24 h-24 rounded-2xl overflow-hidden border-2 transition-all duration-200 ${activeImage === img ? 'border-[#ff5a20] scale-105 shadow-xl shadow-[#ff5a20]/20 z-10' : 'border-transparent opacity-50 hover:opacity-100'}`}>
-                  <img src={img} alt={`Thumbnail ${idx + 1}`} className="object-cover w-full h-full" />
-                </button>
-              ))}
-            </div>
-          )}
+
+          {/* Thumbnails */}
+          <div className="flex gap-3 overflow-x-auto py-2 custom-scrollbar items-center">
+            
+            {/* Video Thumbnail (Appears first if a video exists) */}
+            {youtubeId && (
+              <button 
+                onClick={() => setActiveImage('video')} 
+                className={`flex-shrink-0 relative w-24 h-24 rounded-2xl overflow-hidden border-2 transition-all duration-200 flex items-center justify-center bg-black ${activeImage === 'video' ? 'border-[#ff0000] scale-105 shadow-xl shadow-[#ff0000]/20 z-10' : 'border-white/20 opacity-70 hover:opacity-100 hover:border-[#ff0000]'}`}
+              >
+                <img src={`https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg`} className="absolute inset-0 w-full h-full object-cover opacity-50" alt="Video Thumbnail" />
+                <div className="relative z-10 bg-[#ff0000] text-white w-10 h-8 rounded-lg flex items-center justify-center shadow-lg">
+                   ▶
+                </div>
+              </button>
+            )}
+
+            {/* Regular Image Thumbnails */}
+            {allImages.map((img, idx) => (
+              <button 
+                key={idx} 
+                onClick={() => setActiveImage(img)} 
+                className={`flex-shrink-0 relative w-24 h-24 rounded-2xl overflow-hidden border-2 transition-all duration-200 ${activeImage === img ? 'border-[#ff5a20] scale-105 shadow-xl shadow-[#ff5a20]/20 z-10' : 'border-transparent opacity-50 hover:opacity-100'}`}
+              >
+                <img src={img} alt={`Thumbnail ${idx + 1}`} className="object-cover w-full h-full" />
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* THE BID LEDGER */}
@@ -252,7 +289,6 @@ export default function BidCard({ listing }: { listing: any }) {
               bidHistory.map((bid, idx) => (
                 <div key={bid.id} className={`flex justify-between items-center p-3 rounded-xl border ${idx === 0 ? 'bg-[#ff5a20]/10 border-[#ff5a20]/30' : 'bg-black/30 border-white/5'}`}>
                   <div className="flex flex-col items-start relative z-10">
-                    {/* The Fully Clickable Link */}
                     <Link 
                       href={`/user/${bid.bidder_id}`} 
                       className="text-white font-bold hover:text-[#ff5a20] hover:underline transition-colors py-0.5 cursor-pointer"
@@ -276,7 +312,7 @@ export default function BidCard({ listing }: { listing: any }) {
       {/* RIGHT COLUMN: Specs & Bidding Interface */}
       <div className="flex flex-col text-white space-y-6">
         
-        {/* Header (INFO Restored!) */}
+        {/* Header */}
         <div>
           <div className="flex justify-between items-start mb-2">
             <button onClick={toggleWatchlist} disabled={isWatchlistLoading} className={`text-sm font-bold px-4 py-2 rounded-full transition-colors border ${isWatchlisted ? 'bg-white/20 border-white/40 text-white hover:bg-white/10' : 'bg-transparent border-white/20 text-white/70 hover:text-white hover:border-white/60'}`}>
@@ -301,9 +337,7 @@ export default function BidCard({ listing }: { listing: any }) {
             </span>
           </div>
 
-          {/* AUCTION ANALYTICS BANNERS */}
           <div className="grid grid-cols-3 gap-3 md:gap-4 mb-8">
-            {/* BIDS PLACED */}
             <div className="bg-black/40 border border-white/5 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-inner">
               <span className="text-2xl md:text-3xl font-black text-white tracking-tighter">
                 {bidHistory.length || 0}
@@ -311,7 +345,6 @@ export default function BidCard({ listing }: { listing: any }) {
               <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-white/40 mt-1">Bids Placed</span>
             </div>
             
-            {/* WATCHERS */}
             <div className="bg-black/40 border border-white/5 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-inner">
               <span className="text-2xl md:text-3xl font-black text-white tracking-tighter">
                 {listing.watchers || 0}
@@ -319,7 +352,6 @@ export default function BidCard({ listing }: { listing: any }) {
               <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-white/40 mt-1">Watchers</span>
             </div>
 
-            {/* VIEWS */}
             <div className="bg-black/40 border border-white/5 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-inner">
               <span className="text-2xl md:text-3xl font-black text-white tracking-tighter">
                 {listing.views || 0}
@@ -333,7 +365,6 @@ export default function BidCard({ listing }: { listing: any }) {
             {successMsg && <p className="text-green-400 text-xs font-bold text-right uppercase tracking-wider">{successMsg}</p>}
             
             <div className="flex justify-end items-center gap-4">
-               {/* Only show the bid input if the auction is still active */}
                {!isEnded && (
                  <div className="flex gap-2 w-full sm:w-auto">
                    <input type="number" value={bidInput} onChange={(e) => setBidInput(e.target.value === '' ? '' : Number(e.target.value))} placeholder={`> ${currentBid}`} disabled={isBidding} className="w-full sm:w-32 bg-black/50 border border-white/20 rounded-xl px-4 py-2 text-white font-bold focus:outline-none focus:border-[#ff5a20] disabled:opacity-50" />
@@ -345,7 +376,6 @@ export default function BidCard({ listing }: { listing: any }) {
             </div>
           </div>
 
-          {/* DYNAMIC END STATES */}
           {isSold && (
             <div className="text-center py-6 border-t border-green-500/20 mt-6 animate-pulse">
               <p className="text-green-400 font-extrabold text-2xl tracking-tight mb-2">
@@ -424,6 +454,7 @@ export default function BidCard({ listing }: { listing: any }) {
         </div>
       )}
       </div>
+
       {/* DIRECT MESSAGE MODAL OVERLAY */}
       {isMessageModalOpen && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
