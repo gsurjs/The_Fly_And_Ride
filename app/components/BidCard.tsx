@@ -69,14 +69,16 @@ export default function BidCard({ listing }: { listing: any }) {
   useEffect(() => {
     fetchBids(); 
 
-    const checkWatchlistStatus = async () => {
+    const fetchUserAndWatchlist = async () => {
       const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user); // Save to state so the message button knows who you are!
+      
       if (user) {
         const { data } = await supabase.from('watchlist').select('id').eq('user_id', user.id).eq('listing_id', listing.id).single();
         if (data) setIsWatchlisted(true);
       }
     };
-    checkWatchlistStatus();
+    fetchUserAndWatchlist();
 
     const timer = setInterval(() => {
       const difference = new Date(listing.ends_at).getTime() - new Date().getTime();
