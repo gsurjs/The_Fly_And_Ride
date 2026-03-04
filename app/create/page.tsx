@@ -55,7 +55,7 @@ export default function CreateListing() {
     seller_notes: ''
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -670,6 +670,38 @@ export default function CreateListing() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* DETAILED REPORT TEXTAREAS */}
+          <div className="pt-8 border-t border-white/10 space-y-6">
+            <h2 className="text-2xl font-black text-white tracking-tight mb-4">Detailed Vehicle Report</h2>
+            <p className="text-white/50 text-sm font-bold mb-6">Fill out as much detail as possible. Sections left blank will be hidden from buyers.</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[
+                { id: 'highlights', label: 'Highlights', placeholder: 'General overview of the vehicle...' },
+                { id: 'equipment', label: 'Equipment', placeholder: 'Factory options, packages, etc...' },
+                { id: 'modifications', label: 'Modifications', placeholder: 'Aftermarket parts, tunes, exhaust...' },
+                { id: 'known_flaws', label: 'Known Flaws', placeholder: 'Scratches, dents, mechanical issues...' },
+                { id: 'recent_service_history', label: 'Recent Service History', placeholder: 'Oil changes, tire replacements...' },
+                { id: 'other_items_included', label: 'Other Items Included', placeholder: 'Keys, manuals, spare parts...' },
+                { id: 'ownership_history', label: 'Ownership History', placeholder: 'Number of owners, states registered in...' },
+                { id: 'seller_notes', label: 'Seller Notes', placeholder: 'Any final thoughts or disclaimers...' },
+              ].map((field) => (
+                <div key={field.id} className="flex flex-col">
+                  <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">
+                    {field.label}
+                  </label>
+                  <textarea
+                    name={field.id}
+                    value={(formData as any)[field.id]}
+                    onChange={handleChange}
+                    placeholder={field.placeholder}
+                    className="w-full h-32 bg-white/5 border border-white/10 rounded-xl p-4 text-white text-sm focus:outline-none focus:border-[#ff5a20] transition-colors resize-y custom-scrollbar"
+                  />
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="pt-6">
