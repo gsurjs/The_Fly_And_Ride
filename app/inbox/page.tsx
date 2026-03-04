@@ -95,10 +95,28 @@ export default function InboxPage() {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  // Auto-scroll to bottom of chat when active chat changes
+  // Auto-scroll to bottom of chat AND Mark as Read
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [activeChatId, conversations]);
+
+    // Mark messages as read when you open the conversation
+    const markAsRead = async () => {
+      if (!activeChatId || !currentUser) return;
+      
+      const activeConvo = conversations.find(c => c.id === activeChatId);
+      if (!activeConvo) return;
+
+      // Update all unread messages in this chat where I am the receiver
+      await supabase
+        .from('messages')
+        .update({ is_read: true })
+        .eq('listing_id', activeConvo.listing.id)
+        .eq('receiver_id', currentUser.id)
+        .eq('is_read', false);
+    };
+
+    markAsRead();
+  }, [activeChatId, conversations, currentUser, supabase]);
 
   // 2. Send a new message
   const handleSendMessage = async (e: React.FormEvent) => {
