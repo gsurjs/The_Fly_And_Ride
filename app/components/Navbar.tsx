@@ -5,6 +5,7 @@ import SignOutButton from './SignOutButton';
 import { Suspense } from 'react';
 import MobileMenu from './MobileMenu';
 import SearchButton from './SearchButton';
+import InboxBadge from './InboxBadge';
 
 // Isolate the dynamic cookie reading into its own async component
 // 1. Upgraded to accept an `isMobile` flag for conditional CSS styling
@@ -65,6 +66,10 @@ async function NavbarAuth({ isMobile }: { isMobile?: boolean }) {
         </Link>
         
         {isMobile ? <div className="h-px bg-white/10 w-full my-2"></div> : <div className="w-px h-4 bg-white/20 mx-2"></div>}
+
+        <InboxBadge isMobile={isMobile} userId={user.id} />
+
+        {isMobile ? <div className="h-px bg-white/10 w-full my-2"></div> : <div className="w-px h-4 bg-white/20 mx-2"></div>}
         
         <Link 
           href="/dashboard" 
@@ -113,6 +118,7 @@ async function NavbarAuth({ isMobile }: { isMobile?: boolean }) {
 
 // 2. The main Navbar remains a static Server Component with a Suspense boundary
 export default function Navbar() {
+
   return (
     <nav className="w-full bg-black/50 backdrop-blur-md border-b border-white/10 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 md:px-10 h-20 flex items-center justify-between">
