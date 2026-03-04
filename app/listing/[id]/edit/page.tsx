@@ -358,21 +358,48 @@ function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: st
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-white/10">
+          {/* Permanently Locked Core Identity Fields */}
           <div>
-            <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Make {hasBids && '🔒'}</label>
-            <input required name="make" type="text" value={listing.make} onChange={handleChange} disabled={hasBids} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-[#ff5a20] transition-colors disabled:opacity-50" />
+            <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Make 🔒</label>
+            <input 
+              readOnly 
+              name="make" 
+              type="text" 
+              value={listing.make} 
+              className="w-full bg-black/30 border border-white/5 text-white/50 rounded-xl p-3 cursor-not-allowed font-bold" 
+            />
           </div>
           <div>
-            <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Model {hasBids && '🔒'}</label>
-            <input required name="model" type="text" value={listing.model} onChange={handleChange} disabled={hasBids} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-[#ff5a20] transition-colors disabled:opacity-50" />
+            <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Model 🔒</label>
+            <input 
+              readOnly 
+              name="model" 
+              type="text" 
+              value={listing.model} 
+              className="w-full bg-black/30 border border-white/5 text-white/50 rounded-xl p-3 cursor-not-allowed font-bold" 
+            />
           </div>
           <div>
-            <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Year {hasBids && '🔒'}</label>
-            <input required name="year" type="number" value={listing.year} onChange={handleChange} disabled={hasBids} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-[#ff5a20] transition-colors disabled:opacity-50" />
+            <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Year 🔒</label>
+            <input 
+              readOnly 
+              name="year" 
+              type="number" 
+              value={listing.year} 
+              className="w-full bg-black/30 border border-white/5 text-white/50 rounded-xl p-3 cursor-not-allowed font-bold" 
+            />
           </div>
+
+          {/* Flexible Fields (Locked ONLY if bids exist) */}
           <div>
             <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Title Status {hasBids && '🔒'}</label>
-            <select name="title_status" value={listing.title_status} onChange={handleChange} disabled={hasBids} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-[#ff5a20] transition-colors appearance-none text-white disabled:opacity-50">
+            <select 
+              name="title_status" 
+              value={listing.title_status} 
+              onChange={handleChange} 
+              disabled={hasBids} 
+              className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-[#ff5a20] transition-colors appearance-none text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <option value="Clean" className="bg-black">Clean</option>
               <option value="Rebuilt" className="bg-black">Rebuilt</option>
               <option value="Salvage" className="bg-black">Salvage</option>
@@ -381,7 +408,16 @@ function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: st
           </div>
           <div>
             <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Mileage {hasBids && '🔒'}</label>
-            <input required name="mileage" type="number" min="0" value={listing.mileage} onChange={handleChange} disabled={hasBids} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-[#ff5a20] transition-colors disabled:opacity-50" />
+            <input 
+              required 
+              name="mileage" 
+              type="number" 
+              min="0" 
+              value={listing.mileage} 
+              onChange={handleChange} 
+              disabled={hasBids} 
+              className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-[#ff5a20] transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
+            />
           </div>
           
           {/* Verified US Location Field */}
