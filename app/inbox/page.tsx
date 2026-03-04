@@ -107,12 +107,16 @@ export default function InboxPage() {
       if (!activeConvo) return;
 
       // Update all unread messages in this chat where I am the receiver
-      await supabase
+      const { error } = await supabase
         .from('messages')
         .update({ is_read: true })
         .eq('listing_id', activeConvo.listing.id)
         .eq('receiver_id', currentUser.id)
         .eq('is_read', false);
+        
+      if (error) {
+        console.error("Error marking as read:", error);
+      }
     };
 
     markAsRead();
