@@ -9,6 +9,7 @@ const supabase = createBrowserClient(
 );
 
 export default function BidCard({ listing }: { listing: any }) {
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [timeLeft, setTimeLeft] = useState('Calculating...');
   const [currentBid, setCurrentBid] = useState(listing.reserve_price || 0);
   const [isBidding, setIsBidding] = useState(false);
@@ -19,6 +20,11 @@ export default function BidCard({ listing }: { listing: any }) {
   
   const [isWatchlisted, setIsWatchlisted] = useState(false);
   const [isWatchlistLoading, setIsWatchlistLoading] = useState(false);
+
+  // Direct Messaging State
+  const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+  const [messageText, setMessageText] = useState('');
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
 
   // Bid Ledger State
   const [bidHistory, setBidHistory] = useState<any[]>([]);
@@ -161,6 +167,29 @@ export default function BidCard({ listing }: { listing: any }) {
       setIsWatchlisted(true);
     }
     setIsWatchlistLoading(false);
+  };
+
+  // Send Direct Message Function
+  const handleSendMessage = async () => {
+    if (!messageText.trim() || !currentUser || !listing) return;
+    setIsSendingMessage(true);
+
+    const { error } = await supabase.from('messages').insert([{
+      listing_id: listing.id,
+      sender_id: currentUser.id,
+      receiver_id: listing.seller_id,
+      content: messageText.trim(),
+    }]);
+
+    if (error) {
+      alert('Failed to send message. Please try again.');
+      setIsSendingMessage(false);
+    } else {
+      setIsMessageModalOpen(false);
+      setMessageText('');
+      setIsSendingMessage(false);
+      alert('Message sent! Keep an eye on your Inbox for a reply.');
+    }
   };
 
   // Auction Resolution Logic
@@ -358,6 +387,16 @@ export default function BidCard({ listing }: { listing: any }) {
             <p className="font-bold text-lg text-[#ff5a20] tabular-nums text-nowrap">{timeLeft}</p>
           </div>
         </div>
+
+        {/* MESSAGE SELLER BUTTON */}
+        {currentUser && currentUser.id !== listing.seller_id && (
+          <button
+            onClick={() => setIsMessageModalOpen(true)}
+            className="w-full bg-transparent hover:bg-white/5 border-2 border-white/20 text-white font-extrabold py-3 px-6 rounded-xl transition-colors mt-4 tracking-widest text-sm flex items-center justify-center gap-2"
+          >
+            <span>💬</span> MESSAGE SELLER
+          </button>
+        )}
         
         {isLightboxOpen && (
         <div 
@@ -383,6 +422,44 @@ export default function BidCard({ listing }: { listing: any }) {
         </div>
       )}
       </div>
+      {/* DIRECT MESSAGE MODAL OVERLAY */}
+      {isMessageModalOpen && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#1a0a07] border border-[#ff5a20]/30 p-6 md:p-8 rounded-3xl w-full max-w-lg shadow-[0_0_40px_rgba(255,90,32,0.15)] relative overflow-hidden">
+            
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[150%] h-24 bg-[#ff5a20]/20 blur-[50px] pointer-events-none"></div>
+
+            <div className="relative z-10">
+              <h2 className="text-2xl font-black text-white mb-2 tracking-tight">Message the Seller</h2>
+              <p className="text-white/60 text-sm mb-6 font-medium">Ask about the {listing.year} {listing.make} {listing.model}, request specific photos, or discuss logistics.</p>
+
+              <textarea
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                placeholder="Hi, I'm highly interested in this bike. Could you tell me more about..."
+                className="w-full h-36 bg-black/50 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-[#ff5a20] transition-colors resize-none mb-6 text-sm"
+              ></textarea>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setIsMessageModalOpen(false)}
+                  disabled={isSendingMessage}
+                  className="flex-1 bg-white/5 hover:bg-white/10 text-white text-xs font-bold py-4 rounded-xl transition-colors disabled:opacity-50 uppercase tracking-widest"
+                >
+                  CANCEL
+                </button>
+                <button
+                  onClick={handleSendMessage}
+                  disabled={isSendingMessage || !messageText.trim()}
+                  className="flex-1 bg-[#ff5a20] hover:bg-[#ff4500] text-white text-xs font-bold py-4 rounded-xl transition-colors disabled:opacity-50 uppercase tracking-widest"
+                >
+                  {isSendingMessage ? 'SENDING...' : 'SEND MESSAGE'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
