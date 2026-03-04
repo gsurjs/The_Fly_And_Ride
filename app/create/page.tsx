@@ -61,17 +61,19 @@ export default function CreateListing() {
     }
   };
 
-  // Instantly switches to Import mode from an error
-  const enableImportMode = () => {
+  // Now accepts a message to tell the user what happened
+  const enableImportMode = (message: string) => {
     setIsImported(true);
     setIsVinLocked(false);
-    setVinError(''); // Clear the error 
+    setVinError(message); // Leave a helpful note explaining the auto-switch
   };
 
   const decodeVIN = async () => {
     setVinError('');
+
+    // If it's less than 17 characters, auto-switch immediately
     if (formData.vin.trim().length !== 17) {
-      setVinError("Standard VINs must be exactly 17 characters. Is this a vintage or imported bike?");
+      enableImportMode("Standard VINs are 17 characters. We automatically switched you to Import / Vintage mode so you can upload your frame number.");
       return;
     }
 
@@ -81,10 +83,10 @@ export default function CreateListing() {
       const data = await response.json();
       const result = data.Results[0];
 
+      // If the API fails to find it, auto-switch immediately
       if (!result.Make || result.ErrorCode !== "0") {
-        setVinError(result.ErrorText || "Vehicle not found in the US database. Is this a grey-market import or pre-1981 motorcycle?");
-        setIsVinLocked(false);
         setIsDecoding(false);
+        enableImportMode("Vehicle not found in the standard US database. We automatically switched you to Import / Vintage mode.");
         return;
       }
 
@@ -317,23 +319,7 @@ export default function CreateListing() {
         <p className="text-white/50 font-semibold uppercase tracking-widest text-xs mb-8">Reach thousands of verified buyers.</p>
 
         {errorMsg && <div className="bg-red-500/20 border border-red-500/50 text-red-400 p-4 rounded-xl mb-6 font-bold">{errorMsg}</div>}
-        {vinError && (
-          <div className="bg-yellow-500/10 border border-yellow-500/50 p-4 rounded-xl mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-lg">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">⚠️</span>
-              <span className="text-yellow-500 font-bold">{vinError}</span>
-            </div>
-            {!isImported && (
-              <button 
-                type="button" 
-                onClick={enableImportMode} 
-                className="bg-yellow-500 hover:bg-yellow-400 text-black font-extrabold px-5 py-2.5 rounded-lg text-xs tracking-widest uppercase transition-colors whitespace-nowrap shadow-[0_0_15px_rgba(234,179,8,0.3)]"
-              >
-                Switch to Import Mode
-              </button>
-            )}
-          </div>
-        )}
+        {vinError && <div className="bg-yellow-500/20 border border-yellow-500/50 text-yellow-500 p-4 rounded-xl mb-6 font-bold">{vinError}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-8 text-white">
           
@@ -372,7 +358,7 @@ export default function CreateListing() {
                   <button 
                     type="button" 
                     onClick={decodeVIN}
-                    disabled={isDecoding || formData.vin.length !== 17}
+                    disabled={isDecoding || formData.vin.length === 0}
                     className="bg-white hover:bg-gray-200 text-black font-extrabold px-6 py-3 rounded-xl transition-colors disabled:opacity-50 whitespace-nowrap"
                   >
                     {isDecoding ? 'DECODING...' : 'VERIFY VIN'}
