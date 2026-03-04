@@ -33,28 +33,90 @@ export async function POST(req: Request) {
     const { type, table, record, old_record } = payload;
 
     // =========================================================================
-    // SCENARIO 1: LISTING APPROVED (Admin -> Seller)
+    // SCENARIO 1: LISTING UPDATES (Approval, Sold, Unsold)
     // =========================================================================
     if (table === 'listings' && type === 'UPDATE') {
+      
+      const { data: { user: seller } } = await supabaseAdmin.auth.admin.getUserById(record.seller_id);
+
+      // --- A. ADMIN APPROVED LISTING ---
       if (old_record?.status === 'pending' && record?.status === 'active') {
-        const { data: { user }, error } = await supabaseAdmin.auth.admin.getUserById(record.seller_id);
-        
-        if (user?.email) {
+        if (seller?.email) {
           await transporter.sendMail({
             from: FROM_EMAIL,
-            to: user.email,
+            to: seller.email,
             subject: `✅ Your ${record.year} ${record.make} is LIVE on FLY&RIDE!`,
             html: `
               <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background-color: #1a0a07; color: white; padding: 40px; border-radius: 16px;">
                 <h1 style="color: #ff5a20; margin-bottom: 8px;">Congratulations!</h1>
                 <p style="font-size: 16px; line-height: 1.5;">Your <strong>${record.year} ${record.make} ${record.model}</strong> has been approved by our moderation team.</p>
-                <p style="font-size: 16px; line-height: 1.5;">Buyers can now view your listing, ask questions, and start bidding. Good luck with your auction!</p>
-                <br/>
                 <a href="https://theflyandride.com/listing/${record.id}" style="display: inline-block; background-color: #ff5a20; color: white; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 8px; letter-spacing: 1px;">VIEW LIVE AUCTION</a>
-                
-                <div style="display: none; color: transparent; font-size: 0px; line-height: 0px;">
-                  Ref: ${new Date().getTime()}
+              </div>
+            `,
+          });
+        }
+      }
+
+      // --- B. AUCTION SOLD (Timer Ended & Reserve Met) ---
+      if (old_record?.status === 'active' && record?.status === 'sold') {
+        // Find the winning bid and buyer
+        const { data: winningBid } = await supabaseAdmin
+          .from('bids')
+          .select('amount, bidder_id')
+          .eq('listing_id', record.id)
+          .order('amount', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (winningBid && seller?.email) {
+          const { data: { user: buyer } } = await supabaseAdmin.auth.admin.getUserById(winningBid.bidder_id);
+          
+          if (buyer?.email) {
+            // 1. Email the Winner
+            await transporter.sendMail({
+              from: FROM_EMAIL,
+              to: buyer.email,
+              subject: `🎉 YOU WON: ${record.year} ${record.make} ${record.model}!`,
+              html: `
+                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background-color: #1a0a07; color: white; padding: 40px; border-radius: 16px;">
+                  <h1 style="color: #4ade80; margin-bottom: 8px;">Congratulations, you won!</h1>
+                  <p style="font-size: 16px; line-height: 1.5;">You are the winning bidder for the <strong>${record.year} ${record.make} ${record.model}</strong> with a bid of <strong>$${winningBid.amount.toLocaleString()}</strong>.</p>
+                  <p style="font-size: 16px; line-height: 1.5;"><strong>Next Steps:</strong> Please reach out to the seller directly to arrange payment and transportation.</p>
+                  <p style="font-size: 16px; line-height: 1.5; background-color: rgba(255,255,255,0.1); padding: 16px; border-radius: 8px;">Seller Email: <strong>${seller.email}</strong></p>
                 </div>
+              `,
+            });
+
+            // 2. Email the Seller
+            await transporter.sendMail({
+              from: FROM_EMAIL,
+              to: seller.email,
+              subject: `💰 SOLD: Your ${record.year} ${record.make} ${record.model}!`,
+              html: `
+                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background-color: #1a0a07; color: white; padding: 40px; border-radius: 16px;">
+                  <h1 style="color: #4ade80; margin-bottom: 8px;">Your Motorcycle Sold!</h1>
+                  <p style="font-size: 16px; line-height: 1.5;">The auction for your <strong>${record.year} ${record.make}</strong> has ended successfully at <strong>$${winningBid.amount.toLocaleString()}</strong>.</p>
+                  <p style="font-size: 16px; line-height: 1.5;"><strong>Next Steps:</strong> The buyer has been given your email address. You can also reach out to them directly below.</p>
+                  <p style="font-size: 16px; line-height: 1.5; background-color: rgba(255,255,255,0.1); padding: 16px; border-radius: 8px;">Winning Buyer Email: <strong>${buyer.email}</strong></p>
+                </div>
+              `,
+            });
+          }
+        }
+      }
+
+      // --- C. AUCTION UNSOLD (Reserve Not Met or No Bids) ---
+      if (old_record?.status === 'active' && record?.status === 'unsold') {
+        if (seller?.email) {
+          await transporter.sendMail({
+            from: FROM_EMAIL,
+            to: seller.email,
+            subject: `Auction Ended: ${record.year} ${record.make} ${record.model}`,
+            html: `
+              <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background-color: #1a0a07; color: white; padding: 40px; border-radius: 16px;">
+                <h1 style="color: #ef4444; margin-bottom: 8px;">Auction Closed</h1>
+                <p style="font-size: 16px; line-height: 1.5;">The auction timer for your <strong>${record.year} ${record.make}</strong> has run out, but the reserve price was not met.</p>
+                <p style="font-size: 16px; line-height: 1.5;">You can relist your motorcycle from your dashboard at any time.</p>
               </div>
             `,
           });
