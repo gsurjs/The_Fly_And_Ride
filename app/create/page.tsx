@@ -642,7 +642,7 @@ export default function CreateListing() {
           <div className="pt-6">
             <button 
               type="submit" 
-              disabled={loading || (!isImported && !isVinLocked)} 
+              disabled={loading || (!isImported && !isVinLocked) || !isLocationLocked}
               className={`w-full text-white font-extrabold py-4 rounded-xl shadow-lg transition-colors text-lg tracking-wide ${loading || (!isImported && !isVinLocked) ? 'bg-white/10 text-white/30 cursor-not-allowed' : 'bg-[#ff5a20] hover:bg-[#ff4500]'}`}
             >
               {!isImported && !isVinLocked ? 'VERIFY VIN TO CONTINUE' : loading ? 'UPLOADING TO SECURE LEDGER...' : 'SUBMIT MOTORCYCLE FOR AUCTION'}
