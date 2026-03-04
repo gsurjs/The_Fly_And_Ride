@@ -61,10 +61,17 @@ export default function CreateListing() {
     }
   };
 
+  // Instantly switches to Import mode from an error
+  const enableImportMode = () => {
+    setIsImported(true);
+    setIsVinLocked(false);
+    setVinError(''); // Clear the error 
+  };
+
   const decodeVIN = async () => {
     setVinError('');
     if (formData.vin.trim().length !== 17) {
-      setVinError("Standard VINs must be exactly 17 characters to decode.");
+      setVinError("Standard VINs must be exactly 17 characters. Is this a vintage or imported bike?");
       return;
     }
 
@@ -75,7 +82,7 @@ export default function CreateListing() {
       const result = data.Results[0];
 
       if (!result.Make || result.ErrorCode !== "0") {
-        setVinError(result.ErrorText || "Invalid VIN or vehicle not found in database.");
+        setVinError(result.ErrorText || "Vehicle not found in the US database. Is this a grey-market import or pre-1981 motorcycle?");
         setIsVinLocked(false);
         setIsDecoding(false);
         return;
@@ -188,7 +195,7 @@ export default function CreateListing() {
       return;
     }
 
-    // 🟢 NEW: Enforce Verification Photos for Imports
+    // Enforce Verification Photos for Imports
     if (isImported && (!framePhoto || !titlePhoto)) {
       setErrorMsg("Imported & Vintage bikes require BOTH a Frame Number photo and Title photo for verification.");
       setLoading(false);
@@ -310,7 +317,23 @@ export default function CreateListing() {
         <p className="text-white/50 font-semibold uppercase tracking-widest text-xs mb-8">Reach thousands of verified buyers.</p>
 
         {errorMsg && <div className="bg-red-500/20 border border-red-500/50 text-red-400 p-4 rounded-xl mb-6 font-bold">{errorMsg}</div>}
-        {vinError && <div className="bg-yellow-500/20 border border-yellow-500/50 text-yellow-500 p-4 rounded-xl mb-6 font-bold">{vinError}</div>}
+        {vinError && (
+          <div className="bg-yellow-500/10 border border-yellow-500/50 p-4 rounded-xl mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-lg">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">⚠️</span>
+              <span className="text-yellow-500 font-bold">{vinError}</span>
+            </div>
+            {!isImported && (
+              <button 
+                type="button" 
+                onClick={enableImportMode} 
+                className="bg-yellow-500 hover:bg-yellow-400 text-black font-extrabold px-5 py-2.5 rounded-lg text-xs tracking-widest uppercase transition-colors whitespace-nowrap shadow-[0_0_15px_rgba(234,179,8,0.3)]"
+              >
+                Switch to Import Mode
+              </button>
+            )}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-8 text-white">
           
