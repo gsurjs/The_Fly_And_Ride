@@ -33,6 +33,51 @@ export default function BidCard({ listing }: { listing: any }) {
   const [activeImage, setActiveImage] = useState(listing.image_url || fallbackImage);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const allImages = [listing.image_url || fallbackImage, ...(listing.gallery_urls || [])];
+  const [openSection, setOpenSection] = useState<string | null>('Highlights');
+
+  // ACCORDIAN Style Data Structure
+  const listingDetails = [
+    {
+      id: 'Highlights',
+      title: 'Highlights',
+      content: `THIS... is a 2021 Porsche 718 Cayman GT4, finished in black with a black interior.\nThis coupe is equipped with the desirable 6-speed manual transmission, and its odometer displays about 14,400 miles.\nThe attached Carfax history report lists no mileage inconsistencies in this Cayman's past. It also shows that this Porsche has been registered in California since new.\nNotable modifications reported by the seller include a Dundon Motorsports Pro Tune with a COBB Tuning Accessport tuner, Dundon Motorsports mandrel-bent equal-length exhaust headers, a Valvetronic Designs titanium exhaust system, RSNV rear wing risers, and an aftermarket shift knob.\nA build sheet is provided in the gallery, and a partial list of notable equipment reported by the seller includes the Chrono Package, full bucket seats, Alcantara and leather upholstery, and a Bose surround sound system.\nIntroduced in 2020, the Porsche 718 Cayman GT4 featured an all-new naturally aspirated 4.0-liter flat-6 engine paired to either a 6-speed manual or a 7-speed PDK transmission, as well as a new aero package with up to 50% more downforce than the original GT4. Mix these all up with a further refined chassis, and the 718 Cayman GT4 proved to be 12 seconds quicker than its predecessor where it matters the most for a Porsche: the Nürburgring Nordschleife.\nPower comes from a 4.0-liter flat-6, rated at 414 horsepower and 309 lb-ft of torque in stock form. Due to the modifications performed to this Cayman, it may produce more power, but a dyno sheet was not provided to confirm. Output is sent to the rear wheels via a 6-speed manual transmission.`
+    },
+    {
+      id: 'Equipment',
+      title: 'Equipment',
+      content: `A build sheet is provided in the gallery, and a partial list of notable equipment reported by the seller includes:\n• Chrono Package (analog and digital stopwatch on the dashboard, performance display in the infotainment system, and more)\n• 20-inch wheels\n• Full bucket seats\n• Alcantara and leather upholstery\n• Bose surround sound system`
+    },
+    {
+      id: 'Modifications',
+      title: 'Modifications',
+      content: `Notable modifications reported by the seller include:\n\nMechanical:\n• Dundon Motorsports Pro Tune with COBB Tuning Accessport tuner\n• Dundon Motorsports mandrel-bent equal-length exhaust headers\n• Valvetronic Designs titanium exhaust system\n• BMC air filters\n\nExterior:\n• Cayman GT4 RS front bumper\n• Tinted side-marker lights\n• RSNV rear wing risers\n\nInterior:\n• Aftermarket shift knob`
+    },
+    {
+      id: 'Known Flaws',
+      title: 'Known Flaws',
+      content: `• The attached Carfax history report notes that this Cayman sustained "moderate damage" to its front, right-front, right-rear, and undercarriage after an accident in August 2024. The seller states that the front bumper was replaced following the accident.\n• Some scratches on the front splitter`
+    },
+    {
+      id: 'Recent Service History',
+      title: 'Recent Service History',
+      content: `The attached Carfax history report shows that the following services have been performed:\n• December 2025 (13,655 miles): Tire(s) mounted\n• July 2025 (12,204 miles): Tire(s) replaced\n• April 2025 (10,092 miles): Engine oil and filter changed\n• January 2025 (6,865 miles): Cooling system bled, four-wheel alignment performed\n• September 2021 (64 miles): Engine oil and filter changed, coolant flushed/changed`
+    },
+    {
+      id: 'Other Items Included',
+      title: 'Other Items Included in Sale',
+      content: `• 2 keys\n• Owner's manual\n• COBB Tuning Accessport tuner\n• EdGaurd seat bolster covers\n• Numeric Racing shift knob\n• Spare trim covers\n• Gas cap tether ring`
+    },
+    {
+      id: 'Ownership History',
+      title: 'Ownership History',
+      content: `The seller reportedly purchased this Cayman in June 2024 and has added about 8,200 miles since.`
+    },
+    {
+      id: 'Seller Notes',
+      title: 'Seller Notes',
+      content: `• The seller states that the windows are tinted.\n• Due to the modifications performed to this Cayman, it may not pass emissions testing in some states. As always, it's the buyer's responsibility to perform all due diligence regarding registering this car in their respective state prior to placing a bid.\n• There is a loan on this vehicle, and sale proceeds will be used to satisfy the loan. We recommend handling the loan payoff securely through Cars & Bids SafePay if agreed to by both the buyer and the seller. Please note that the title may only be available after the loan has been paid off.`
+    }
+  ];
 
   // YouTube ID Extractor
   const getYouTubeId = (url: string) => {
@@ -324,6 +369,38 @@ export default function BidCard({ listing }: { listing: any }) {
           <p className="text-sm text-white/80 leading-relaxed">
             <span className="text-white font-bold">INFO:</span> This unit comes with a {listing.title_status.toLowerCase()} title and is currently located in {listing.location}.
           </p>
+        </div>
+
+        {/* EXPANDABLE LISTING DETAILS SECTION */}
+        <div className="lg:col-span-2 mt-4 space-y-3">
+          {listingDetails.map((section) => {
+            const isOpen = openSection === section.id;
+            return (
+              <div key={section.id} className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden transition-all duration-300">
+                <button
+                  onClick={() => setOpenSection(isOpen ? null : section.id)}
+                  className="w-full flex items-center justify-between p-5 md:p-6 text-left hover:bg-white/5 transition-colors"
+                >
+                  <h3 className={`text-lg md:text-xl font-extrabold tracking-tight transition-colors ${isOpen ? 'text-[#ff5a20]' : 'text-white'}`}>
+                    {section.title}
+                  </h3>
+                  <span className={`text-[#ff5a20] font-black text-2xl transition-transform duration-300 ${isOpen ? 'rotate-45' : ''}`}>
+                    +
+                  </span>
+                </button>
+                
+                {/* Expandable Content Area */}
+                <div 
+                  className={`transition-all duration-300 ease-in-out ${isOpen ? 'max-h-[1000px] opacity-100 pb-6 px-5 md:px-6' : 'max-h-0 opacity-0 overflow-hidden px-5 md:px-6'}`}
+                >
+                  <div className="h-px w-full bg-white/10 mb-4"></div>
+                  <div className="text-white/80 text-sm md:text-base leading-relaxed whitespace-pre-wrap">
+                    {section.content}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* AUCTION RESOLUTION ENGINE */}
