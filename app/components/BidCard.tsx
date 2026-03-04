@@ -204,17 +204,30 @@ export default function BidCard({ listing }: { listing: any }) {
   };
 
   // Dummy Data & Icon Helper for the Feature Tiles
-  const getIconForSection = (id: string) => {
+  const getIconForSection = (id: string, isModal: boolean = false) => {
+    // Icons scale up slightly in the modal vs the small tiles
+    const size = isModal ? "w-8 h-8" : "w-7 h-7"; 
+    const baseClass = `${size} transition-colors duration-300`;
+
     switch(id) {
-      case 'Highlights': return '✨';
-      case 'Equipment': return '🛠️';
-      case 'Modifications': return '⚙️';
-      case 'Known Flaws': return '⚠️';
-      case 'Recent Service History': return '📅';
-      case 'Other Items Included': return '📦';
-      case 'Ownership History': return '👤';
-      case 'Seller Notes': return '📝';
-      default: return '📄';
+      case 'Highlights': // Sparkle
+        return <svg className={baseClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>;
+      case 'Equipment': // Gear
+        return <svg className={baseClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>;
+      case 'Modifications': // Sliders/Adjustments
+        return <svg className={baseClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>;
+      case 'Known Flaws': // Warning Triangle
+        return <svg className={baseClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>;
+      case 'Recent Service History': // Clipboard Check
+        return <svg className={baseClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>;
+      case 'Other Items Included': // Box/Package
+        return <svg className={baseClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>;
+      case 'Ownership History': // Users/People
+        return <svg className={baseClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>;
+      case 'Seller Notes': // Note/Edit
+        return <svg className={baseClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>;
+      default: // Document
+        return <svg className={baseClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>;
     }
   };
 
@@ -491,10 +504,12 @@ export default function BidCard({ listing }: { listing: any }) {
               {/* Subtle hover glow inside the card */}
               <div className="absolute -inset-1 bg-gradient-to-b from-[#ff5a20]/0 to-[#ff5a20]/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
               
-              <span className="text-3xl mb-2 group-hover:scale-110 transition-transform group-hover:-translate-y-1 relative z-10">
-                {getIconForSection(section.id)}
-              </span>
-              <span className="text-xs font-bold text-white/80 group-hover:text-white text-center leading-tight relative z-10 tracking-wide">
+              {/* SVG Icon Container - Turns Orange on Hover! */}
+              <div className="text-white/50 group-hover:text-[#ff5a20] mb-2 group-hover:scale-110 transition-all duration-300 group-hover:-translate-y-1 relative z-10">
+                {getIconForSection(section.id, false)}
+              </div>
+              
+              <span className="text-xs font-bold text-white/80 group-hover:text-white text-center leading-tight relative z-10 tracking-wide transition-colors">
                 {section.title}
               </span>
             </button>
@@ -512,7 +527,8 @@ export default function BidCard({ listing }: { listing: any }) {
             {/* Header */}
             <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/10 shrink-0">
               <h2 className="text-2xl md:text-3xl font-black text-white flex items-center gap-3 tracking-tight">
-                <span>{getIconForSection(activeDetailModal.id)}</span> {activeDetailModal.title}
+                <span className="text-[#ff5a20]">{getIconForSection(activeDetailModal.id, true)}</span> 
+                {activeDetailModal.title}
               </h2>
               <button 
                 onClick={() => setActiveDetailModal(null)} 
