@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import imageCompression from 'browser-image-compression';
 import Link from 'next/link';
 
-// NEW: Custom type to handle the draggable mix of existing and new images
+// Custom type to handle the draggable mix of existing and new images
 type ImageItem = {
   id: string; 
   isExisting: boolean;
@@ -38,6 +38,11 @@ function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: st
   const [hasBids, setHasBids] = useState(false);
   const [originalReserve, setOriginalReserve] = useState(0);
 
+  // Location Verification States
+  const [zipCode, setZipCode] = useState('');
+  const [isLocationLocked, setIsLocationLocked] = useState(true); // Default to true since they already have a valid location
+  const [locationError, setLocationError] = useState('');
+
   useEffect(() => {
     const fetchListing = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -68,7 +73,8 @@ function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: st
         setHasBids(true);
       }
 
-      setListing(data);
+      // Ensure video_url exists in state even if null in DB
+      setListing({ ...data, video_url: data.video_url || '' });
       setOriginalReserve(data.reserve_price || 0);
 
       // Populate Unified Draggable Grid
@@ -90,6 +96,36 @@ function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: st
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setListing({ ...listing, [e.target.name]: e.target.value });
+  };
+
+  // Verify Zip Code Logic
+  const verifyZipCode = async () => {
+    setLocationError('');
+    if (zipCode.trim().length !== 5) {
+      setLocationError('Please enter a valid 5-digit US Zip Code.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`https://api.zippopotam.us/us/${zipCode}`);
+      
+      if (!response.ok) {
+        setLocationError('Invalid US Zip Code. Please try again.');
+        setIsLocationLocked(false);
+        return;
+      }
+      
+      const data = await response.json();
+      const place = data.places[0];
+      
+      const formattedLocation = `${place['place name']}, ${place['state abbreviation']}`;
+      
+      setListing((prev: any) => ({ ...prev, location: formattedLocation }));
+      setIsLocationLocked(true);
+      
+    } catch (err) {
+      setLocationError('Network error. Could not verify Zip Code.');
+    }
   };
 
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -127,18 +163,16 @@ function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: st
     setImages([...images, ...newImageItems]);
   };
 
-  // Unified Image Removal 
   const handleRemoveImage = (indexToRemove: number) => {
     const imgToRemove = images[indexToRemove];
     if (imgToRemove.isExisting) {
-      setUrlsToDelete([...urlsToDelete, imgToRemove.url]); // Queue for bucket deletion
+      setUrlsToDelete([...urlsToDelete, imgToRemove.url]); 
     } else {
-      URL.revokeObjectURL(imgToRemove.url); // Clean memory for local blobs
+      URL.revokeObjectURL(imgToRemove.url); 
     }
     setImages(images.filter((_, idx) => idx !== indexToRemove));
   };
 
-  // Drag and Drop Handlers
   const handleDragStart = (e: React.DragEvent, index: number) => {
     setDraggedIdx(index);
     e.dataTransfer.effectAllowed = 'move';
@@ -168,6 +202,12 @@ function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: st
       return;
     }
 
+    if (!isLocationLocked) {
+      setErrorMsg("Please verify your US Zip Code before saving.");
+      setSaving(false);
+      return;
+    }
+
     if (hasBids && Number(listing.reserve_price) > originalReserve) {
       setErrorMsg("Active bids exist. You may only lower your reserve price, not raise it.");
       setSaving(false);
@@ -178,7 +218,6 @@ function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: st
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) throw new Error("Authentication failed.");
 
-      // 1. Cost-Saving Step: Delete removed images from Supabase Bucket
       if (urlsToDelete.length > 0) {
         for (const url of urlsToDelete) {
           if (url.includes('/motorcycles/')) {
@@ -188,7 +227,6 @@ function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: st
         }
       }
 
-      // 2. Upload new images & preserve existing ones in exact drag-order
       const finalUrls: string[] = [];
       for (const item of images) {
         if (item.isExisting) {
@@ -206,7 +244,6 @@ function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: st
       const mainImageUrl = finalUrls[0];
       const galleryUrls = finalUrls.slice(1);
 
-      // 3. Update the Database
       const { error: dbError } = await supabase
         .from('listings')
         .update({
@@ -218,7 +255,8 @@ function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: st
           title_status: listing.title_status,
           reserve_price: Number(listing.reserve_price),
           image_url: mainImageUrl,
-          gallery_urls: galleryUrls
+          gallery_urls: galleryUrls,
+          video_url: listing.video_url // Update the video URL
         })
         .eq('id', listingId);
 
@@ -304,6 +342,21 @@ function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: st
           )}
         </div>
 
+        {/* YouTube Video Link Field */}
+        <div className="md:col-span-2 bg-white/5 border border-white/10 rounded-2xl p-6">
+          <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2 flex items-center gap-2">
+            <span className="text-[#ff0000]">▶</span> YouTube Walkaround / Cold Start Link <span className="text-white/30 lowercase normal-case text-[10px]">(Optional)</span>
+          </label>
+          <input 
+            name="video_url" 
+            type="url" 
+            placeholder="e.g., https://www.youtube.com/watch?v=..." 
+            value={listing.video_url} 
+            onChange={handleChange}
+            className="w-full bg-black/50 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-[#ff0000] transition-colors" 
+          />
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-white/10">
           <div>
             <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Make {hasBids && '🔒'}</label>
@@ -323,16 +376,67 @@ function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: st
               <option value="Clean" className="bg-black">Clean</option>
               <option value="Rebuilt" className="bg-black">Rebuilt</option>
               <option value="Salvage" className="bg-black">Salvage</option>
+              <option value="Import" className="bg-black">Import / Grey Market</option>
             </select>
           </div>
           <div>
             <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Mileage {hasBids && '🔒'}</label>
             <input required name="mileage" type="number" min="0" value={listing.mileage} onChange={handleChange} disabled={hasBids} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-[#ff5a20] transition-colors disabled:opacity-50" />
           </div>
-          <div>
-            <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Update Location</label>
-            <input required name="location" type="text" value={listing.location} onChange={handleChange} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-[#ff5a20] transition-colors" />
+          
+          {/* Verified US Location Field */}
+          <div className="md:col-span-2 lg:col-span-1">
+            <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">
+              Location (US Only) {isLocationLocked && '🔒'}
+            </label>
+            <div className="flex gap-2">
+              {!isLocationLocked ? (
+                <>
+                  <input 
+                    type="text" 
+                    placeholder="5-digit Zip Code" 
+                    maxLength={5}
+                    value={zipCode} 
+                    onChange={(e) => {
+                      setZipCode(e.target.value.replace(/[^0-9]/g, ''));
+                      setLocationError('');
+                    }}
+                    className="w-1/2 bg-white/5 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-[#ff5a20] transition-colors" 
+                  />
+                  <button 
+                    type="button" 
+                    onClick={verifyZipCode}
+                    disabled={zipCode.length !== 5}
+                    className="w-1/2 bg-white hover:bg-gray-200 text-black font-extrabold px-4 py-3 rounded-xl transition-colors disabled:opacity-50"
+                  >
+                    VERIFY
+                  </button>
+                </>
+              ) : (
+                <>
+                  <input 
+                    readOnly 
+                    type="text" 
+                    value={listing.location} 
+                    className="w-3/4 bg-green-500/10 border border-green-500/30 text-green-400 font-bold rounded-xl p-3 focus:outline-none cursor-not-allowed" 
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      setIsLocationLocked(false);
+                      setZipCode('');
+                      setListing({ ...listing, location: '' });
+                    }}
+                    className="w-1/4 bg-red-500/20 hover:bg-red-500/40 text-red-400 border border-red-500/30 font-bold rounded-xl transition-colors"
+                  >
+                    RESET
+                  </button>
+                </>
+              )}
+            </div>
+            {locationError && <p className="text-red-400 text-xs mt-2 font-bold">{locationError}</p>}
           </div>
+
           <div className="md:col-span-2">
             <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Reserve Price ($)</label>
             <input required name="reserve_price" type="number" min="0" value={listing.reserve_price} onChange={handleChange} className={`w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-[#ff5a20] transition-colors ${hasBids && Number(listing.reserve_price) > originalReserve ? 'border-red-500 text-red-400 focus:border-red-500' : ''}`} />
@@ -341,8 +445,8 @@ function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: st
         </div>
 
         <div className="pt-6">
-          <button type="submit" disabled={saving} className="w-full bg-[#ff5a20] hover:bg-[#ff4500] disabled:opacity-50 text-white font-extrabold py-4 rounded-xl transition-colors tracking-wide shadow-lg">
-            {saving ? 'UPDATING SECURE LEDGER...' : 'SAVE CHANGES'}
+          <button type="submit" disabled={saving || !isLocationLocked} className="w-full bg-[#ff5a20] hover:bg-[#ff4500] disabled:opacity-50 text-white font-extrabold py-4 rounded-xl transition-colors tracking-wide shadow-lg">
+            {!isLocationLocked ? 'VERIFY ZIP CODE TO CONTINUE' : saving ? 'UPDATING SECURE LEDGER...' : 'SAVE CHANGES'}
           </button>
         </div>
       </form>
