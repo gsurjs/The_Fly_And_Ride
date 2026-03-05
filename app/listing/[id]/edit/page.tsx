@@ -499,12 +499,6 @@ function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: st
           </div>
         </div>
 
-        <div className="pt-6">
-          <button type="submit" disabled={saving || !isLocationLocked} className="w-full bg-[#ff5a20] hover:bg-[#ff4500] disabled:opacity-50 text-white font-extrabold py-4 rounded-xl transition-colors tracking-wide shadow-lg">
-            {!isLocationLocked ? 'VERIFY ZIP CODE TO CONTINUE' : saving ? 'UPDATING SECURE LEDGER...' : 'SAVE CHANGES'}
-          </button>
-        </div>
-
         {/* DETAILED REPORT TEXTAREAS */}
         <div className="pt-8 border-t border-white/10 space-y-6">
           <h2 className="text-2xl font-black text-white tracking-tight mb-4">Detailed Vehicle Report</h2>
@@ -535,6 +529,12 @@ function EditListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: st
               </div>
             ))}
           </div>
+        </div>
+
+        <div className="pt-6">
+          <button type="submit" disabled={saving || !isLocationLocked} className="w-full bg-[#ff5a20] hover:bg-[#ff4500] disabled:opacity-50 text-white font-extrabold py-4 rounded-xl transition-colors tracking-wide shadow-lg">
+            {!isLocationLocked ? 'VERIFY ZIP CODE TO CONTINUE' : saving ? 'UPDATING SECURE LEDGER...' : 'SAVE CHANGES'}
+          </button>
         </div>
       </form>
     </div>
