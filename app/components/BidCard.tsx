@@ -334,7 +334,7 @@ export default function BidCard({ listing }: { listing: any }) {
 
             {!isEnded && (
               <div className="flex flex-col gap-3 mb-6">
-                <div className="flex gap-2 w-full items-stretch">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:items-stretch">
                   <input 
                     type="number" 
                     value={bidInput} 
@@ -346,7 +346,7 @@ export default function BidCard({ listing }: { listing: any }) {
                   <button 
                     onClick={handlePlaceBid} 
                     disabled={isBidding} 
-                    className="bg-[#ff5a20] hover:bg-[#ff4500] disabled:opacity-50 transition-colors text-white font-extrabold px-6 sm:px-8 rounded-xl shadow-lg shadow-[#ff5a20]/20 tracking-widest text-sm sm:text-base h-12 sm:h-14 flex items-center justify-center"
+                    className="w-full sm:w-auto bg-[#ff5a20] hover:bg-[#ff4500] disabled:opacity-50 transition-colors text-white font-extrabold px-6 sm:px-8 rounded-xl shadow-lg shadow-[#ff5a20]/20 tracking-widest text-sm sm:text-base h-14 flex items-center justify-center"
                   >
                     {isBidding ? '...' : 'BID'}
                   </button>
