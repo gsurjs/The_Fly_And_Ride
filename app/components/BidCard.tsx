@@ -334,9 +334,20 @@ export default function BidCard({ listing }: { listing: any }) {
 
             {!isEnded && (
               <div className="flex flex-col gap-3 mb-6">
-                <div className="flex gap-2 w-full">
-                  <input type="number" value={bidInput} onChange={(e) => setBidInput(e.target.value === '' ? '' : Number(e.target.value))} placeholder={`> $${currentBid.toLocaleString()}`} disabled={isBidding} className="flex-1 bg-black/50 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white text-base sm:text-lg font-bold focus:outline-none focus:border-[#ff5a20] disabled:opacity-50" />
-                  <button onClick={handlePlaceBid} disabled={isBidding} className="bg-[#ff5a20] hover:bg-[#ff4500] disabled:opacity-50 transition-colors text-white font-extrabold px-5 sm:px-6 py-3 sm:py-4 rounded-xl shadow-lg shadow-[#ff5a20]/20 tracking-widest text-sm sm:text-base">
+                <div className="flex gap-2 w-full items-stretch">
+                  <input 
+                    type="number" 
+                    value={bidInput} 
+                    onChange={(e) => setBidInput(e.target.value === '' ? '' : Number(e.target.value))} 
+                    placeholder={`> $${currentBid.toLocaleString()}`} 
+                    disabled={isBidding} 
+                    className="flex-1 bg-black/50 border border-white/20 rounded-xl px-4 text-white text-base sm:text-lg font-bold focus:outline-none focus:border-[#ff5a20] disabled:opacity-50 h-12 sm:h-14" 
+                  />
+                  <button 
+                    onClick={handlePlaceBid} 
+                    disabled={isBidding} 
+                    className="bg-[#ff5a20] hover:bg-[#ff4500] disabled:opacity-50 transition-colors text-white font-extrabold px-6 sm:px-8 rounded-xl shadow-lg shadow-[#ff5a20]/20 tracking-widest text-sm sm:text-base h-12 sm:h-14 flex items-center justify-center"
+                  >
                     {isBidding ? '...' : 'BID'}
                   </button>
                 </div>
