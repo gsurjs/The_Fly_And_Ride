@@ -271,183 +271,145 @@ export default function BidCard({ listing }: { listing: any }) {
       </div>
 
       {/* MAIN GRID LAYOUT */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 lg:gap-8">
         
-        {/* LEFT: GALLERY & FEATURES (Takes up 8 columns) */}
-        <div className="lg:col-span-8 flex flex-col gap-6">
-          
+        {/* 1. GALLERY (Always First) */}
+        <div className="lg:col-span-8 order-1 flex flex-col gap-4">
           {/* Main Viewer */}
           <div 
             onClick={() => activeImage !== 'video' && setIsLightboxOpen(true)}
-            className={`relative rounded-3xl overflow-hidden shadow-2xl aspect-[16/9] w-full bg-black border border-white/10 group flex items-center justify-center ${activeImage !== 'video' ? 'cursor-zoom-in' : ''}`}>
+            className={`relative rounded-3xl overflow-hidden shadow-2xl aspect-[4/3] sm:aspect-[16/9] w-full bg-black border border-white/10 group flex items-center justify-center ${activeImage !== 'video' ? 'cursor-zoom-in' : ''}`}>
             
             {activeImage === 'video' && youtubeId ? (
-              <iframe 
-                className="w-full h-full"
-                src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1`} 
-                title="YouTube video player" 
-                frameBorder="0" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                allowFullScreen
-              ></iframe>
+              <iframe className="w-full h-full" src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1`} title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
             ) : (
               <>
                 <img src={activeImage} alt={`${listing.make} ${listing.model}`} className="object-cover w-full h-full opacity-90 group-hover:opacity-100 transition-opacity duration-300" />
                 <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none text-white shadow-lg">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                  </svg>
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
                 </div>
               </>
             )}
           </div>
 
           {/* Thumbnails */}
-          <div className="flex gap-3 overflow-x-auto py-2 custom-scrollbar items-center pb-4">
+          <div className="flex gap-2 overflow-x-auto py-2 custom-scrollbar items-center pb-2">
             {youtubeId && (
-              <button 
-                onClick={() => setActiveImage('video')} 
-                className={`flex-shrink-0 relative w-28 h-20 rounded-xl overflow-hidden border-2 transition-all duration-200 flex items-center justify-center bg-black ${activeImage === 'video' ? 'border-[#ff0000] scale-105 shadow-xl shadow-[#ff0000]/20 z-10' : 'border-white/20 opacity-70 hover:opacity-100 hover:border-[#ff0000]'}`}
-              >
+              <button onClick={() => setActiveImage('video')} className={`flex-shrink-0 relative w-24 h-16 sm:w-28 sm:h-20 rounded-xl overflow-hidden border-2 transition-all duration-200 flex items-center justify-center bg-black ${activeImage === 'video' ? 'border-[#ff0000] scale-105 shadow-xl shadow-[#ff0000]/20 z-10' : 'border-white/20 opacity-70 hover:opacity-100 hover:border-[#ff0000]'}`}>
                 <img src={`https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg`} className="absolute inset-0 w-full h-full object-cover opacity-50" alt="Video Thumbnail" />
-                <div className="relative z-10 bg-[#ff0000] text-white w-10 h-8 rounded-lg flex items-center justify-center shadow-lg">▶</div>
+                <div className="relative z-10 bg-[#ff0000] text-white w-8 h-6 sm:w-10 sm:h-8 rounded-lg flex items-center justify-center shadow-lg text-xs sm:text-base">▶</div>
               </button>
             )}
             {allImages.map((img, idx) => (
-              <button 
-                key={idx} 
-                onClick={() => setActiveImage(img)} 
-                className={`flex-shrink-0 relative w-28 h-20 rounded-xl overflow-hidden border-2 transition-all duration-200 ${activeImage === img ? 'border-[#ff5a20] scale-105 shadow-xl shadow-[#ff5a20]/20 z-10' : 'border-transparent opacity-50 hover:opacity-100'}`}
-              >
+              <button key={idx} onClick={() => setActiveImage(img)} className={`flex-shrink-0 relative w-24 h-16 sm:w-28 sm:h-20 rounded-xl overflow-hidden border-2 transition-all duration-200 ${activeImage === img ? 'border-[#ff5a20] scale-105 shadow-xl shadow-[#ff5a20]/20 z-10' : 'border-transparent opacity-50 hover:opacity-100'}`}>
                 <img src={img} alt={`Thumbnail ${idx + 1}`} className="object-cover w-full h-full" />
               </button>
             ))}
           </div>
-
-          {/* HORIZONTAL FEATURE TILES */}
-          <div className="mt-2">
-            <h3 className="text-sm font-bold text-white/50 uppercase tracking-widest mb-4 flex items-center gap-2">
-               Vehicle Report
-            </h3>
-            <div className="flex gap-3 overflow-x-auto pb-6 custom-scrollbar">
-              {listingDetails.map((section) => (
-                <button
-                  key={section.id}
-                  onClick={() => setActiveDetailModal(section)}
-                  className="flex-shrink-0 w-32 h-28 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#ff5a20]/50 rounded-2xl flex flex-col items-center justify-center p-3 transition-all group relative overflow-hidden shadow-lg"
-                >
-                  <div className="absolute -inset-1 bg-gradient-to-b from-[#ff5a20]/0 to-[#ff5a20]/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                  <div className="text-white/50 group-hover:text-[#ff5a20] mb-2 group-hover:scale-110 transition-all duration-300 group-hover:-translate-y-1 relative z-10">
-                    {getIconForSection(section.id, false)}
-                  </div>
-                  <span className="text-[11px] font-bold text-white/80 group-hover:text-white text-center leading-tight relative z-10 tracking-wide transition-colors">
-                    {section.title}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
         </div>
 
-        {/* RIGHT: AUCTION ACTION ZONE (Takes up 4 columns) */}
-        <div className="lg:col-span-4 flex flex-col gap-6">
-          
-          {/* Main Auction Box */}
+        {/* 2. AUCTION ACTION ZONE (Moved to slot 2 on mobile, stays in Right Column on Desktop) */}
+        <div className="lg:col-span-4 order-2 flex flex-col gap-6">
           <div className={`border rounded-3xl p-6 md:p-8 backdrop-blur-md shadow-2xl transition-all duration-500 flex flex-col ${isSold ? 'bg-green-500/10 border-green-500/30' : reserveNotMet ? 'bg-red-500/10 border-red-500/30' : 'bg-[#1a0a07] border-[#ff5a20]/30'}`}>
             
-            {/* Time Left & Title Status Badge */}
             <div className="flex justify-between items-center mb-6 pb-6 border-b border-white/10">
               <div>
-                <p className="text-xs text-white/50 uppercase font-bold tracking-widest mb-1">Time Left</p>
-                <p className={`text-2xl font-black tracking-tight tabular-nums ${isEnded ? 'text-white/50' : 'text-[#ff5a20]'}`}>{timeLeft}</p>
+                <p className="text-[10px] sm:text-xs text-white/50 uppercase font-bold tracking-widest mb-1">Time Left</p>
+                <p className={`text-xl sm:text-2xl font-black tracking-tight tabular-nums ${isEnded ? 'text-white/50' : 'text-[#ff5a20]'}`}>{timeLeft}</p>
               </div>
               <div className="text-right">
-                <p className="text-xs text-white/50 uppercase font-bold tracking-widest mb-1">Title</p>
-                <p className={`font-black text-lg ${listing.title_status === 'Clean' ? 'text-green-400' : 'text-yellow-400'}`}>{listing.title_status}</p>
+                <p className="text-[10px] sm:text-xs text-white/50 uppercase font-bold tracking-widest mb-1">Title</p>
+                <p className={`font-black text-base sm:text-lg ${listing.title_status === 'Clean' ? 'text-green-400' : 'text-yellow-400'}`}>{listing.title_status}</p>
               </div>
             </div>
 
-            {/* Current Price */}
             <div className="mb-8">
-              <span className="text-xs font-bold text-white/50 tracking-widest uppercase block mb-2">
+              <span className="text-[10px] sm:text-xs font-bold text-white/50 tracking-widest uppercase block mb-2">
                 {isSold ? 'Final Selling Price' : reserveNotMet ? 'Final Bid (Reserve Not Met)' : 'Current Bid'}
               </span>
-              <span className={`text-5xl font-black tracking-tighter ${isSold ? 'text-green-400' : reserveNotMet ? 'text-red-400' : 'text-white'}`}>
+              <span className={`text-4xl sm:text-5xl font-black tracking-tighter ${isSold ? 'text-green-400' : reserveNotMet ? 'text-red-400' : 'text-white'}`}>
                 ${currentBid.toLocaleString()}
               </span>
             </div>
 
-            {/* Bidding Input (Hidden if ended) */}
             {!isEnded && (
               <div className="flex flex-col gap-3 mb-6">
                 <div className="flex gap-2 w-full">
-                  <input 
-                    type="number" 
-                    value={bidInput} 
-                    onChange={(e) => setBidInput(e.target.value === '' ? '' : Number(e.target.value))} 
-                    placeholder={`> $${currentBid.toLocaleString()}`} 
-                    disabled={isBidding} 
-                    className="flex-1 bg-black/50 border border-white/20 rounded-xl px-4 py-4 text-white text-lg font-bold focus:outline-none focus:border-[#ff5a20] disabled:opacity-50" 
-                  />
-                  <button 
-                    onClick={handlePlaceBid} 
-                    disabled={isBidding} 
-                    className="bg-[#ff5a20] hover:bg-[#ff4500] disabled:opacity-50 transition-colors text-white font-extrabold px-6 py-4 rounded-xl shadow-lg shadow-[#ff5a20]/20 tracking-widest"
-                  >
+                  <input type="number" value={bidInput} onChange={(e) => setBidInput(e.target.value === '' ? '' : Number(e.target.value))} placeholder={`> $${currentBid.toLocaleString()}`} disabled={isBidding} className="flex-1 bg-black/50 border border-white/20 rounded-xl px-4 py-3 sm:py-4 text-white text-base sm:text-lg font-bold focus:outline-none focus:border-[#ff5a20] disabled:opacity-50" />
+                  <button onClick={handlePlaceBid} disabled={isBidding} className="bg-[#ff5a20] hover:bg-[#ff4500] disabled:opacity-50 transition-colors text-white font-extrabold px-5 sm:px-6 py-3 sm:py-4 rounded-xl shadow-lg shadow-[#ff5a20]/20 tracking-widest text-sm sm:text-base">
                     {isBidding ? '...' : 'BID'}
                   </button>
                 </div>
-                {errorMsg && <p className="text-red-400 text-xs font-bold uppercase tracking-wider text-center">{errorMsg}</p>}
-                {successMsg && <p className="text-green-400 text-xs font-bold uppercase tracking-wider text-center">{successMsg}</p>}
+                {errorMsg && <p className="text-red-400 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-center">{errorMsg}</p>}
+                {successMsg && <p className="text-green-400 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-center">{successMsg}</p>}
               </div>
             )}
 
-            {/* End States */}
             {isSold && (
               <div className="text-center py-4 bg-green-500/20 rounded-xl mt-2 mb-6">
-                <p className="text-green-400 font-extrabold tracking-tight mb-1">SOLD TO {bidHistory[0]?.username}</p>
-                <p className="text-white/60 text-xs font-semibold">The seller will contact the winner.</p>
+                <p className="text-green-400 font-extrabold tracking-tight mb-1 text-sm sm:text-base">SOLD TO {bidHistory[0]?.username}</p>
+                <p className="text-white/60 text-[10px] sm:text-xs font-semibold">The seller will contact the winner.</p>
               </div>
             )}
             {reserveNotMet && (
               <div className="text-center py-4 bg-red-500/20 rounded-xl mt-2 mb-6">
-                <p className="text-red-400 font-extrabold tracking-tight mb-1">RESERVE NOT MET</p>
-                <p className="text-white/60 text-xs font-semibold">The highest bid fell short.</p>
+                <p className="text-red-400 font-extrabold tracking-tight mb-1 text-sm sm:text-base">RESERVE NOT MET</p>
+                <p className="text-white/60 text-[10px] sm:text-xs font-semibold">The highest bid fell short.</p>
               </div>
             )}
 
-            {/* Analytics Mini-Grid */}
             <div className="grid grid-cols-3 gap-2 border-t border-white/10 pt-6">
               <div className="flex flex-col items-center justify-center text-center">
-                <span className="text-xl font-black text-white">{bidHistory.length || 0}</span>
-                <span className="text-[9px] font-bold uppercase tracking-widest text-white/40 mt-1">Bids</span>
+                <span className="text-lg sm:text-xl font-black text-white">{bidHistory.length || 0}</span>
+                <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-widest text-white/40 mt-1">Bids</span>
               </div>
               <div className="flex flex-col items-center justify-center text-center border-x border-white/10">
-                <span className="text-xl font-black text-white">{listing.watchers || 0}</span>
-                <span className="text-[9px] font-bold uppercase tracking-widest text-white/40 mt-1">Watchers</span>
+                <span className="text-lg sm:text-xl font-black text-white">{listing.watchers || 0}</span>
+                <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-widest text-white/40 mt-1">Watchers</span>
               </div>
               <div className="flex flex-col items-center justify-center text-center">
-                <span className="text-xl font-black text-white">{listing.views || 0}</span>
-                <span className="text-[9px] font-bold uppercase tracking-widest text-white/40 mt-1">Views</span>
+                <span className="text-lg sm:text-xl font-black text-white">{listing.views || 0}</span>
+                <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-widest text-white/40 mt-1">Views</span>
               </div>
             </div>
             
-            {/* Message Seller Button */}
             {currentUser && currentUser.id !== listing.seller_id && (
-              <button
-                onClick={() => setIsMessageModalOpen(true)}
-                className="w-full mt-6 bg-transparent hover:bg-white/5 border-2 border-white/20 text-white font-bold py-4 rounded-xl transition-colors tracking-widest text-xs flex items-center justify-center gap-2"
-              >
+              <button onClick={() => setIsMessageModalOpen(true)} className="w-full mt-6 bg-transparent hover:bg-white/5 border-2 border-white/20 text-white font-bold py-3 sm:py-4 rounded-xl transition-colors tracking-widest text-[10px] sm:text-xs flex items-center justify-center gap-2">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
                 MESSAGE SELLER
               </button>
             )}
           </div>
+        </div>
 
-          {/* Bid History Box (Moved to Right Column) */}
-          <div className="bg-black/40 border border-white/10 rounded-3xl p-6 flex flex-col h-80 shadow-inner">
-            <h3 className="text-sm font-bold text-white/50 uppercase tracking-widest mb-4 flex items-center gap-2">
+        {/* 3. FEATURE TILES (Slot 3 on Mobile, Left Column on Desktop) */}
+        <div className="lg:col-span-8 order-3 flex flex-col">
+          <h3 className="text-xs sm:text-sm font-bold text-white/50 uppercase tracking-widest mb-4 flex items-center gap-2">
+            Vehicle Report
+          </h3>
+          <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-6 custom-scrollbar">
+            {listingDetails.map((section) => (
+              <button
+                key={section.id}
+                onClick={() => setActiveDetailModal(section)}
+                className="flex-shrink-0 w-28 h-24 sm:w-32 sm:h-28 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#ff5a20]/50 rounded-2xl flex flex-col items-center justify-center p-2 sm:p-3 transition-all group relative overflow-hidden shadow-lg"
+              >
+                <div className="absolute -inset-1 bg-gradient-to-b from-[#ff5a20]/0 to-[#ff5a20]/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="text-white/50 group-hover:text-[#ff5a20] mb-2 group-hover:scale-110 transition-all duration-300 group-hover:-translate-y-1 relative z-10">
+                  {getIconForSection(section.id, false)}
+                </div>
+                <span className="text-[10px] sm:text-[11px] font-bold text-white/80 group-hover:text-white text-center leading-tight relative z-10 tracking-wide transition-colors">
+                  {section.title}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 4. BID HISTORY (Slot 4 on Mobile, Right Column on Desktop) */}
+        <div className="lg:col-span-4 order-4 flex flex-col h-[350px] sm:h-[400px]">
+          <div className="bg-black/40 border border-white/10 rounded-3xl p-6 flex flex-col h-full shadow-inner">
+            <h3 className="text-xs sm:text-sm font-bold text-white/50 uppercase tracking-widest mb-4 flex items-center gap-2">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               Bid History
             </h3>
@@ -458,14 +420,14 @@ export default function BidCard({ listing }: { listing: any }) {
                 bidHistory.map((bid, idx) => (
                   <div key={bid.id} className={`flex justify-between items-center p-3 rounded-xl border ${idx === 0 ? 'bg-[#ff5a20]/10 border-[#ff5a20]/30' : 'bg-white/5 border-transparent'}`}>
                     <div className="flex flex-col items-start">
-                      <Link href={`/user/${bid.bidder_id}`} className="text-white font-bold hover:text-[#ff5a20] hover:underline transition-colors text-sm">
+                      <Link href={`/user/${bid.bidder_id}`} className="text-white font-bold hover:text-[#ff5a20] hover:underline transition-colors text-xs sm:text-sm">
                         {bid.username}
                       </Link>
-                      <p className="text-white/40 text-[10px] uppercase font-semibold">
+                      <p className="text-white/40 text-[9px] sm:text-[10px] uppercase font-semibold">
                         {new Date(bid.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
-                    <div className={`font-black ${idx === 0 ? 'text-[#ff5a20] text-lg' : 'text-white/80'}`}>
+                    <div className={`font-black ${idx === 0 ? 'text-[#ff5a20] text-base sm:text-lg' : 'text-white/80 text-sm sm:text-base'}`}>
                       ${bid.amount.toLocaleString()}
                     </div>
                   </div>
@@ -473,7 +435,6 @@ export default function BidCard({ listing }: { listing: any }) {
               )}
             </div>
           </div>
-          
         </div>
       </div>
 
