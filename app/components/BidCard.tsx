@@ -250,7 +250,7 @@ export default function BidCard({ listing }: { listing: any }) {
   const noBidsEnd = isEnded && !hasBids;
 
   return (
-    <div className="w-full max-w-[1400px] mx-auto px-4 lg:px-8 flex flex-col gap-8">
+    <div className="w-full flex flex-col gap-8">
       
       {/* HEADER (Title & Badges at the very top) */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-white/10 pb-6">
