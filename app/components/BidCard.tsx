@@ -271,10 +271,10 @@ export default function BidCard({ listing }: { listing: any }) {
       </div>
 
       {/* MAIN GRID LAYOUT */}
-      <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 lg:gap-8">
+      <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 lg:gap-8 relative">
         
         {/* 1. GALLERY (Always First) */}
-        <div className="lg:col-span-8 order-1 flex flex-col gap-4">
+        <div className="lg:col-start-1 lg:col-span-8 lg:row-start-1 order-1 flex flex-col gap-4 w-full">
           {/* Main Viewer */}
           <div 
             onClick={() => activeImage !== 'video' && setIsLightboxOpen(true)}
@@ -309,92 +309,95 @@ export default function BidCard({ listing }: { listing: any }) {
         </div>
 
         {/* 2. AUCTION ACTION ZONE (Moved to slot 2 on mobile, stays in Right Column on Desktop) */}
-        <div className="lg:col-span-4 order-2 flex flex-col gap-6">
-          <div className={`border rounded-3xl p-6 md:p-8 backdrop-blur-md shadow-2xl transition-all duration-500 flex flex-col ${isSold ? 'bg-green-500/10 border-green-500/30' : reserveNotMet ? 'bg-red-500/10 border-red-500/30' : 'bg-[#1a0a07] border-[#ff5a20]/30'}`}>
-            
-            <div className="flex justify-between items-center mb-6 pb-6 border-b border-white/10">
-              <div>
-                <p className="text-[10px] sm:text-xs text-white/50 uppercase font-bold tracking-widest mb-1">Time Left</p>
-                <p className={`text-xl sm:text-2xl font-black tracking-tight tabular-nums ${isEnded ? 'text-white/50' : 'text-[#ff5a20]'}`}>{timeLeft}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-[10px] sm:text-xs text-white/50 uppercase font-bold tracking-widest mb-1">Title</p>
-                <p className={`font-black text-base sm:text-lg ${listing.title_status === 'Clean' ? 'text-green-400' : 'text-yellow-400'}`}>{listing.title_status}</p>
-              </div>
-            </div>
-
-            <div className="mb-8">
-              <span className="text-[10px] sm:text-xs font-bold text-white/50 tracking-widest uppercase block mb-2">
-                {isSold ? 'Final Selling Price' : reserveNotMet ? 'Final Bid (Reserve Not Met)' : 'Current Bid'}
-              </span>
-              <span className={`text-4xl sm:text-5xl font-black tracking-tighter ${isSold ? 'text-green-400' : reserveNotMet ? 'text-red-400' : 'text-white'}`}>
-                ${currentBid.toLocaleString()}
-              </span>
-            </div>
-
-            {!isEnded && (
-              <div className="flex flex-col gap-3 mb-6">
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:items-stretch">
-                  <input 
-                    type="number" 
-                    value={bidInput} 
-                    onChange={(e) => setBidInput(e.target.value === '' ? '' : Number(e.target.value))} 
-                    placeholder={`> $${currentBid.toLocaleString()}`} 
-                    disabled={isBidding} 
-                    className="flex-1 bg-black/50 border border-white/20 rounded-xl px-4 text-white text-base sm:text-lg font-bold focus:outline-none focus:border-[#ff5a20] disabled:opacity-50 h-12 sm:h-14" 
-                  />
-                  <button 
-                    onClick={handlePlaceBid} 
-                    disabled={isBidding} 
-                    className="w-full sm:w-auto bg-[#ff5a20] hover:bg-[#ff4500] disabled:opacity-50 transition-colors text-white font-extrabold px-6 sm:px-8 rounded-xl shadow-lg shadow-[#ff5a20]/20 tracking-widest text-sm sm:text-base h-14 flex items-center justify-center"
-                  >
-                    {isBidding ? '...' : 'BID'}
-                  </button>
+        <div className="lg:col-start-9 lg:col-span-4 lg:row-start-1 lg:row-span-3 order-2 w-full">
+          {/* This sticky wrapper follows the user down the page on desktop! */}
+          <div className="sticky top-8 flex flex-col gap-6">
+            <div className={`border rounded-3xl p-6 md:p-8 backdrop-blur-md shadow-2xl transition-all duration-500 flex flex-col ${isSold ? 'bg-green-500/10 border-green-500/30' : reserveNotMet ? 'bg-red-500/10 border-red-500/30' : 'bg-[#1a0a07] border-[#ff5a20]/30'}`}>
+              
+              <div className="flex justify-between items-center mb-6 pb-6 border-b border-white/10">
+                <div>
+                  <p className="text-[10px] sm:text-xs text-white/50 uppercase font-bold tracking-widest mb-1">Time Left</p>
+                  <p className={`text-xl sm:text-2xl font-black tracking-tight tabular-nums ${isEnded ? 'text-white/50' : 'text-[#ff5a20]'}`}>{timeLeft}</p>
                 </div>
-                {errorMsg && <p className="text-red-400 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-center">{errorMsg}</p>}
-                {successMsg && <p className="text-green-400 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-center">{successMsg}</p>}
+                <div className="text-right">
+                  <p className="text-[10px] sm:text-xs text-white/50 uppercase font-bold tracking-widest mb-1">Title</p>
+                  <p className={`font-black text-base sm:text-lg ${listing.title_status === 'Clean' ? 'text-green-400' : 'text-yellow-400'}`}>{listing.title_status}</p>
+                </div>
               </div>
-            )}
 
-            {isSold && (
-              <div className="text-center py-4 bg-green-500/20 rounded-xl mt-2 mb-6">
-                <p className="text-green-400 font-extrabold tracking-tight mb-1 text-sm sm:text-base">SOLD TO {bidHistory[0]?.username}</p>
-                <p className="text-white/60 text-[10px] sm:text-xs font-semibold">The seller will contact the winner.</p>
+              <div className="mb-8">
+                <span className="text-[10px] sm:text-xs font-bold text-white/50 tracking-widest uppercase block mb-2">
+                  {isSold ? 'Final Selling Price' : reserveNotMet ? 'Final Bid (Reserve Not Met)' : 'Current Bid'}
+                </span>
+                <span className={`text-4xl sm:text-5xl font-black tracking-tighter ${isSold ? 'text-green-400' : reserveNotMet ? 'text-red-400' : 'text-white'}`}>
+                  ${currentBid.toLocaleString()}
+                </span>
               </div>
-            )}
-            {reserveNotMet && (
-              <div className="text-center py-4 bg-red-500/20 rounded-xl mt-2 mb-6">
-                <p className="text-red-400 font-extrabold tracking-tight mb-1 text-sm sm:text-base">RESERVE NOT MET</p>
-                <p className="text-white/60 text-[10px] sm:text-xs font-semibold">The highest bid fell short.</p>
-              </div>
-            )}
 
-            <div className="grid grid-cols-3 gap-2 border-t border-white/10 pt-6">
-              <div className="flex flex-col items-center justify-center text-center">
-                <span className="text-lg sm:text-xl font-black text-white">{bidHistory.length || 0}</span>
-                <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-widest text-white/40 mt-1">Bids</span>
+              {!isEnded && (
+                <div className="flex flex-col gap-3 mb-6">
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:items-stretch">
+                    <input 
+                      type="number" 
+                      value={bidInput} 
+                      onChange={(e) => setBidInput(e.target.value === '' ? '' : Number(e.target.value))} 
+                      placeholder={`> $${currentBid.toLocaleString()}`} 
+                      disabled={isBidding} 
+                      className="w-full sm:flex-1 bg-black/50 border border-white/20 rounded-xl px-4 text-white text-base sm:text-lg font-bold focus:outline-none focus:border-[#ff5a20] disabled:opacity-50 h-14" 
+                    />
+                    <button 
+                      onClick={handlePlaceBid} 
+                      disabled={isBidding} 
+                      className="w-full sm:w-auto bg-[#ff5a20] hover:bg-[#ff4500] disabled:opacity-50 transition-colors text-white font-extrabold px-6 sm:px-8 rounded-xl shadow-lg shadow-[#ff5a20]/20 tracking-widest text-sm sm:text-base h-14 flex items-center justify-center"
+                    >
+                      {isBidding ? '...' : 'BID'}
+                    </button>
+                  </div>
+                  {errorMsg && <p className="text-red-400 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-center">{errorMsg}</p>}
+                  {successMsg && <p className="text-green-400 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-center">{successMsg}</p>}
+                </div>
+              )}
+
+              {isSold && (
+                <div className="text-center py-4 bg-green-500/20 rounded-xl mt-2 mb-6">
+                  <p className="text-green-400 font-extrabold tracking-tight mb-1 text-sm sm:text-base">SOLD TO {bidHistory[0]?.username}</p>
+                  <p className="text-white/60 text-[10px] sm:text-xs font-semibold">The seller will contact the winner.</p>
+                </div>
+              )}
+              {reserveNotMet && (
+                <div className="text-center py-4 bg-red-500/20 rounded-xl mt-2 mb-6">
+                  <p className="text-red-400 font-extrabold tracking-tight mb-1 text-sm sm:text-base">RESERVE NOT MET</p>
+                  <p className="text-white/60 text-[10px] sm:text-xs font-semibold">The highest bid fell short.</p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-3 gap-2 border-t border-white/10 pt-6">
+                <div className="flex flex-col items-center justify-center text-center">
+                  <span className="text-lg sm:text-xl font-black text-white">{bidHistory.length || 0}</span>
+                  <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-widest text-white/40 mt-1">Bids</span>
+                </div>
+                <div className="flex flex-col items-center justify-center text-center border-x border-white/10">
+                  <span className="text-lg sm:text-xl font-black text-white">{listing.watchers || 0}</span>
+                  <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-widest text-white/40 mt-1">Watchers</span>
+                </div>
+                <div className="flex flex-col items-center justify-center text-center">
+                  <span className="text-lg sm:text-xl font-black text-white">{listing.views || 0}</span>
+                  <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-widest text-white/40 mt-1">Views</span>
+                </div>
               </div>
-              <div className="flex flex-col items-center justify-center text-center border-x border-white/10">
-                <span className="text-lg sm:text-xl font-black text-white">{listing.watchers || 0}</span>
-                <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-widest text-white/40 mt-1">Watchers</span>
-              </div>
-              <div className="flex flex-col items-center justify-center text-center">
-                <span className="text-lg sm:text-xl font-black text-white">{listing.views || 0}</span>
-                <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-widest text-white/40 mt-1">Views</span>
-              </div>
+              
+              {currentUser && currentUser.id !== listing.seller_id && (
+                <button onClick={() => setIsMessageModalOpen(true)} className="w-full mt-6 bg-transparent hover:bg-white/5 border-2 border-white/20 text-white font-bold py-3 sm:py-4 rounded-xl transition-colors tracking-widest text-[10px] sm:text-xs flex items-center justify-center gap-2">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                  MESSAGE SELLER
+                </button>
+              )}
             </div>
-            
-            {currentUser && currentUser.id !== listing.seller_id && (
-              <button onClick={() => setIsMessageModalOpen(true)} className="w-full mt-6 bg-transparent hover:bg-white/5 border-2 border-white/20 text-white font-bold py-3 sm:py-4 rounded-xl transition-colors tracking-widest text-[10px] sm:text-xs flex items-center justify-center gap-2">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-                MESSAGE SELLER
-              </button>
-            )}
           </div>
         </div>
 
         {/* 3. FEATURE TILES (Slot 3 on Mobile, Left Column on Desktop) */}
-        <div className="lg:col-span-8 order-3 flex flex-col">
+        <div className="lg:col-start-1 lg:col-span-8 lg:row-start-2 order-3 flex flex-col w-full pt-2">
           <h3 className="text-xs sm:text-sm font-bold text-white/50 uppercase tracking-widest mb-4 flex items-center gap-2">
             Vehicle Report
           </h3>
@@ -417,28 +420,29 @@ export default function BidCard({ listing }: { listing: any }) {
           </div>
         </div>
 
-        {/* 4. BID HISTORY (Slot 4 on Mobile, Right Column on Desktop) */}
-        <div className="lg:col-span-4 order-4 flex flex-col h-[350px] sm:h-[400px]">
-          <div className="bg-black/40 border border-white/10 rounded-3xl p-6 flex flex-col h-full shadow-inner">
-            <h3 className="text-xs sm:text-sm font-bold text-white/50 uppercase tracking-widest mb-4 flex items-center gap-2">
+        {/* 4. BID HISTORY (Left Column, Row 3 - wide rectangle) */}
+        <div className="lg:col-start-1 lg:col-span-8 lg:row-start-3 order-4 flex flex-col w-full pb-4">
+          <div className="bg-black/40 border border-white/10 rounded-3xl p-6 md:p-8 flex flex-col shadow-inner w-full">
+            <h3 className="text-xs sm:text-sm font-bold text-white/50 uppercase tracking-widest mb-6 flex items-center gap-2">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               Bid History
             </h3>
-            <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
+            
+            <div className="overflow-y-auto pr-2 space-y-3 custom-scrollbar max-h-[350px]">
               {bidHistory.length === 0 ? (
-                <p className="text-white/30 text-sm font-bold text-center mt-10">No bids placed yet.</p>
+                <p className="text-white/30 text-sm font-bold text-center py-10">No bids placed yet.</p>
               ) : (
                 bidHistory.map((bid, idx) => (
-                  <div key={bid.id} className={`flex justify-between items-center p-3 rounded-xl border ${idx === 0 ? 'bg-[#ff5a20]/10 border-[#ff5a20]/30' : 'bg-white/5 border-transparent'}`}>
-                    <div className="flex flex-col items-start">
-                      <Link href={`/user/${bid.bidder_id}`} className="text-white font-bold hover:text-[#ff5a20] hover:underline transition-colors text-xs sm:text-sm">
+                  <div key={bid.id} className={`flex justify-between items-center p-4 rounded-2xl border transition-colors ${idx === 0 ? 'bg-[#ff5a20]/10 border-[#ff5a20]/30' : 'bg-white/5 border-white/5'}`}>
+                    <div className="flex flex-col items-start gap-1">
+                      <Link href={`/user/${bid.bidder_id}`} className="text-white font-bold hover:text-[#ff5a20] hover:underline transition-colors text-sm sm:text-base">
                         {bid.username}
                       </Link>
-                      <p className="text-white/40 text-[9px] sm:text-[10px] uppercase font-semibold">
+                      <p className="text-white/40 text-[10px] uppercase font-semibold tracking-wider">
                         {new Date(bid.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
-                    <div className={`font-black ${idx === 0 ? 'text-[#ff5a20] text-base sm:text-lg' : 'text-white/80 text-sm sm:text-base'}`}>
+                    <div className={`font-black ${idx === 0 ? 'text-[#ff5a20] text-xl sm:text-2xl' : 'text-white/80 text-lg sm:text-xl'}`}>
                       ${bid.amount.toLocaleString()}
                     </div>
                   </div>
@@ -448,7 +452,6 @@ export default function BidCard({ listing }: { listing: any }) {
           </div>
         </div>
       </div>
-
       {/* MODALS */}
       {activeDetailModal && (
         <div className="fixed inset-0 z-[400] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md" onClick={() => setActiveDetailModal(null)}>
