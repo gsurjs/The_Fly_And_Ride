@@ -47,7 +47,7 @@ async function ListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: 
 
   // 3. Stack the BidCard and the new CommentsSection vertically
   return (
-    <div className="w-full flex flex-col items-center gap-6">
+    <div className="w-full max-w-[1400px] mx-auto px-4 lg:px-8 flex flex-col gap-6 md:gap-10">
       <ReviewSeller 
         listingId={listing.id} 
         sellerId={listing.seller_id} 
@@ -63,9 +63,8 @@ async function ListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: 
 // 4. Keep the top-level page completely synchronous
 export default function ListingPage({ params }: PageProps) {
   return (
-    <main className="min-h-screen bg-black p-4 md:p-10 flex flex-col items-center font-sans">
+    <main className="min-h-screen bg-black pt-8 pb-20 flex flex-col items-center font-sans">
       <Suspense fallback={<div className="text-white text-xl animate-pulse font-bold tracking-widest uppercase mt-20">Fetching Motorcycle Data...</div>}>
-        {/* Pass the Promise directly into the shielded component */}
         <ListingContent paramsPromise={params} />
       </Suspense>
     </main>
