@@ -60,7 +60,6 @@ async function ListingContent({ paramsPromise }: { paramsPromise: Promise<{ id: 
   );
 }
 
-// 4. Keep the top-level page completely synchronous
 export default function ListingPage({ params }: PageProps) {
   return (
     <main className="min-h-screen bg-black pt-8 pb-20 flex flex-col items-center font-sans">
