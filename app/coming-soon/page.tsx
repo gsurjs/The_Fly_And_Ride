@@ -29,7 +29,9 @@ export default function ComingSoonPage() {
         {/* Accent Line */}
         <div className="h-1 w-24 bg-gradient-to-r from-transparent via-red-600 to-transparent mb-8 opacity-80" />
 
+        {/* Status Indicator */}
         <h2 className="text-2xl md:text-3xl font-light text-neutral-300 mb-6 uppercase tracking-[0.3em]">
+          <span className="text-orange-500 font-semibold mr-3">Status:</span>
           In The Garage
         </h2>
         
