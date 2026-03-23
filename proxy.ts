@@ -11,25 +11,22 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // 1. Define paths that should always bypass the "Coming Soon" block
+  // 1. Define paths that bypass the splash page
   const isPublicResource = 
     pathname.startsWith('/coming-soon') ||
     pathname.startsWith('/login') ||
-    pathname.startsWith('/auth') ||
+    pathname.startsWith('/auth') || 
     pathname.startsWith('/_next') ||
     pathname === '/favicon.ico' ||
     pathname.match(/\.(png|jpg|jpeg|svg|gif|webp)$/);
 
-  // 2. Initialize Supabase and await cookies
   const cookieStore = await request.cookies
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
+        getAll() { return cookieStore.getAll() },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
             request.cookies.set({ name, value, ...options })
@@ -43,17 +40,23 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  // Verify the secure session
   const { data: { user } } = await supabase.auth.getUser()
 
-  // 3. Splash Page Logic (Controlled by Vercel Environment Variable)
   const isComingSoon = process.env.NEXT_PUBLIC_IS_COMING_SOON === 'true'
   
   if (isComingSoon && !isPublicResource) {
-    // Determine if the current user has the admin role
-    const isAdmin = user?.user_metadata?.role === 'admin'
+    // Safely parse a comma-separated list of emails from your environment variables
+    const adminEmailsString = process.env.ADMIN_EMAILS || ''
+    const adminEmails = adminEmailsString.split(',').map(email => email.trim().toLowerCase())
+    
+    const userEmail = user?.email?.toLowerCase() || ''
+    const isEmailAdmin = adminEmails.includes(userEmail)
+    const isMetadataAdmin = user?.user_metadata?.role === 'admin'
+    const isAppMetadataAdmin = user?.app_metadata?.role === 'admin'
 
-    // Redirect to splash page if there is no user, OR if the user is not an admin
+    const isAdmin = isEmailAdmin || isMetadataAdmin || isAppMetadataAdmin
+
+    // Redirect if not logged in at all, OR if logged in but not an admin
     if (!user || !isAdmin) {
       const url = request.nextUrl.clone()
       url.pathname = '/coming-soon'
@@ -61,9 +64,8 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // 4. Standard Route Protection (Always runs, regardless of Coming Soon status)
+  // Standard Route Protection
   const isProtectedPath = pathname.startsWith('/dashboard') || pathname.startsWith('/create')
-  
   if (isProtectedPath && !user) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
@@ -72,8 +74,6 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Update the matcher to intercept all routes so the splash page works globally, 
-  // but explicitly ignore static build files and images to save server execution time.
   matcher: [
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
