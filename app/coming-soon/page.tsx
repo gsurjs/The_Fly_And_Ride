@@ -38,7 +38,7 @@ export default function ComingSoonPage() {
         </h2>
         
         <p className="text-base md:text-xl text-neutral-400 max-w-2xl font-light leading-relaxed mb-12 px-2 md:px-0">
-          The premier destination for buying and selling exceptional motorcycles is currently tuning up.
+          The premier destination for buying and selling motorcycles is currently tuning up.
         </p>
 
         {/* Admin Login Portal */}
