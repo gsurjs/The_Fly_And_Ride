@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Search } from 'lucide-react';
 
 export default function SearchButton({ isMobile }: { isMobile?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -35,11 +36,12 @@ export default function SearchButton({ isMobile }: { isMobile?: boolean }) {
       <button 
         onClick={() => setIsOpen(true)}
         className={isMobile 
-          ? "text-left text-white font-extrabold text-2xl uppercase tracking-tight hover:text-[#ff5a20] transition-colors w-full"
+          ? "flex items-center gap-3 text-left text-white font-extrabold text-2xl uppercase tracking-tight hover:text-[#ff5a20] transition-colors w-full"
           : "bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm tracking-wide uppercase flex items-center gap-2"
         }
       >
-        <span>🔍</span> {isMobile ? "Search Auctions" : "Search"}
+        <Search className={isMobile ? "w-6 h-6 stroke-[3]" : "w-4 h-4 stroke-[2.5]"} />
+        <span>{isMobile ? "Search Auctions" : "Search"}</span>
       </button>
 
       {/* THE FULLSCREEN MODAL */}
