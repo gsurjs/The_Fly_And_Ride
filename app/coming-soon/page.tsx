@@ -21,7 +21,7 @@ export default function ComingSoonPage() {
         
         {/* Brand Name */}
         <div className="mb-6">
-          <h1 className="text-6xl md:text-8xl font-black tracking-tighter uppercase italic text-transparent bg-clip-text bg-gradient-to-br from-white via-neutral-200 to-neutral-500 drop-shadow-xl">
+          <h1 className="text-6xl md:text-8xl font-black tracking-tighter uppercase italic text-transparent bg-clip-text bg-gradient-to-br from-white via-neutral-200 to-neutral-500 drop-shadow-xl pr-2 md:pr-4">
             The Fly <br className="md:hidden" /> & Ride
           </h1>
         </div>
