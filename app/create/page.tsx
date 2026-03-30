@@ -233,6 +233,35 @@ export default function CreateListing() {
     setImageFiles(newFiles); setPreviewUrls(newPreviews); setDraggedIdx(null);
   };
 
+  const resetForm = () => {
+    // Reset all text inputs
+    setFormData({
+      vin: '', make: '', model: '', year: 2026, mileage: 0, location: '',
+      title_status: 'Clean', reserve_price: 0, duration_days: 7, video_url: '',
+      highlights: '', equipment: '', modifications: '', known_flaws: '',
+      recent_service_history: '', other_items_included: '', ownership_history: '', seller_notes: ''
+    });
+    
+    // Clear all images from memory
+    previewUrls.forEach(url => URL.revokeObjectURL(url));
+    if (framePhoto) URL.revokeObjectURL(framePhoto.url);
+    if (titlePhoto) URL.revokeObjectURL(titlePhoto.url);
+    
+    setImageFiles([]);
+    setPreviewUrls([]);
+    setFramePhoto(null);
+    setTitlePhoto(null);
+    
+    // Reset all locks and toggles
+    setIsImported(false);
+    setIsVinLocked(false);
+    setIsLocationLocked(false);
+    setZipCode('');
+    
+    // Drop the success screen
+    setIsSubmitted(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
