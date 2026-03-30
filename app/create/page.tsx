@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import { useRouter } from 'next/navigation';
 import imageCompression from 'browser-image-compression';
+import StripeVerificationModal from '../components/StripeVerificationModal';
 
 export default function CreateListing() {
   const router = useRouter();
@@ -10,6 +11,8 @@ export default function CreateListing() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
+
+  const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -263,6 +266,14 @@ export default function CreateListing() {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       setErrorMsg("Authentication failed. Please log in again.");
+      setLoading(false);
+      return;
+    }
+
+    const { data: profile } = await supabase.from('profiles').select('has_payment_method').eq('id', user.id).single();
+
+    if (!profile?.has_payment_method) {
+      setIsVerificationModalOpen(true);
       setLoading(false);
       return;
     }
