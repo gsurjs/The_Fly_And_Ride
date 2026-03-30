@@ -1,45 +1,76 @@
-/* Auth hold workflow to calculate 5% fee for buyer*/
-
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2026-03-25.dahlia' });
+// Initialize Stripe
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2026-03-25.dahlia', // Use your current Stripe API version
+});
 
-export async function POST(req: Request) {
-  const { bidderId, bidAmount, stripeCustomerId } = await req.json();
-
-  // Calculate 5% fee (Stripe expects amounts in cents, so multiply by 100)
-  const feeAmountCents = Math.floor(bidAmount * 0.05 * 100);
-
+export async function POST(request: Request) {
   try {
-    // Look up the customer's default saved payment method
-    const paymentMethods = await stripe.paymentMethods.list({
-      customer: stripeCustomerId,
-      type: 'card',
-    });
+    const body = await request.json();
+    const { bidderId, bidAmount, stripeCustomerId } = body;
 
-    if (paymentMethods.data.length === 0) {
-      return NextResponse.json({ error: 'No card on file.' }, { status: 400 });
+    // 1. Validate the incoming data
+    if (!bidderId || !bidAmount || !stripeCustomerId) {
+      return NextResponse.json(
+        { success: false, error: 'Missing required fields for authorization.' }, 
+        { status: 400 }
+      );
     }
 
-    // Create a PaymentIntent with capture_method: 'manual'
-    // This places a HOLD on the card, but does NOT pull the funds yet.
+    // 2. Calculate the 5% buyer's fee with Min/Max Caps
+    const BUYERS_FEE_PERCENTAGE = 0.05;
+    const MIN_FEE_USD = 250;
+    const MAX_FEE_USD = 5000;
+
+    let buyersFee = bidAmount * BUYERS_FEE_PERCENTAGE;
+
+    // Apply the boundaries
+    if (buyersFee < MIN_FEE_USD) {
+      buyersFee = MIN_FEE_USD;
+    } else if (buyersFee > MAX_FEE_USD) {
+      buyersFee = MAX_FEE_USD;
+    }
+    
+    // STRIPE RULE: Amounts must be in cents to process the charge
+    const amountInCents = Math.round(buyersFee * 100);
+
+    // 3. Create the PaymentIntent to place the hold
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: feeAmountCents,
+      amount: amountInCents,
       currency: 'usd',
       customer: stripeCustomerId,
-      payment_method: paymentMethods.data[0].id,
-      off_session: true, // They aren't actively filling out a Stripe form right now
-      confirm: true,     // Confirm immediately using the saved card
-      capture_method: 'manual', // This makes it a hold, not a charge
+      
+      // THE MAGIC LINE: Authorize the funds but DO NOT capture them yet.
+      capture_method: 'manual', 
+      
+      // Automatically attempt to confirm the hold using their saved default card
+      confirm: true,
+      
+      // Indicates the customer isn't actively filling out a Stripe checkout form right now
+      off_session: true, 
+      
       metadata: {
-         type: 'bid_fee',
-         bid_amount: bidAmount
-      }
+        bidderId: bidderId,
+        bidAmount: bidAmount.toString(),
+        calculatedFee: buyersFee.toString() // Good for your own Stripe dashboard logs
+      },
     });
 
-    return NextResponse.json({ success: true, paymentIntentId: paymentIntent.id });
+    // 4. Return the ID back to the frontend to save in your Supabase 'bids' table
+    return NextResponse.json({ 
+      success: true, 
+      paymentIntentId: paymentIntent.id 
+    }, { status: 200 });
+
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    console.error('Stripe authorization error:', error);
+    
+    // This catches issues like "Insufficient Funds", "Card Expired", or "Fraud Block"
+    return NextResponse.json({ 
+      success: false, 
+      error: error.message || 'Payment authorization failed. Please check your card.' 
+    }, { status: 400 });
   }
 }
