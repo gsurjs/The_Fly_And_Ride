@@ -66,11 +66,8 @@ export default function StripeVerificationModal({ onClose, onSuccess }: { onClos
   return (
     // 1. The outer wrapper covers the screen and enables scrolling if needed
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm">
-      
-      // 2. The inner wrapper ensures it stays perfectly centered vertically
       <div className="flex min-h-full items-center justify-center p-4 py-10">
         
-        // 3. The actual modal card
         <div className="bg-[#1a0a07] border border-[#ff5a20]/30 p-8 rounded-3xl w-full max-w-md relative">
           <button onClick={onClose} className="absolute top-4 right-4 text-white/50 hover:text-white transition-colors">✕</button>
           
