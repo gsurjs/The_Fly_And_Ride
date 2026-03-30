@@ -57,18 +57,33 @@ export default function StripeVerificationModal({ onClose, onSuccess }: { onClos
       .then(data => setClientSecret(data.clientSecret));
   }, []);
 
-  if (!clientSecret) return <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"><p>Loading secure verification...</p></div>;
+  if (!clientSecret) return (
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 backdrop-blur-sm">
+      <p className="text-[#ff5a20] font-bold tracking-widest uppercase animate-pulse">Loading secure verification...</p>
+    </div>
+  );
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-      <div className="bg-[#1a0a07] border border-[#ff5a20]/30 p-8 rounded-3xl w-full max-w-md relative">
-        <button onClick={onClose} className="absolute top-4 right-4 text-white/50">✕</button>
-        <h2 className="text-2xl font-black text-white mb-2">Verify Your Account</h2>
-        <p className="text-white/60 text-sm mb-6">To ensure a safe marketplace, we require a valid credit card on file to list or bid. Your card will not be charged to list a motorcycle.</p>
+    // 1. The outer wrapper covers the screen and enables scrolling if needed
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm">
+      
+      // 2. The inner wrapper ensures it stays perfectly centered vertically
+      <div className="flex min-h-full items-center justify-center p-4 py-10">
         
-        <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'night' } }}>
-          <CheckoutForm onSuccess={onSuccess} />
-        </Elements>
+        // 3. The actual modal card
+        <div className="bg-[#1a0a07] border border-[#ff5a20]/30 p-8 rounded-3xl w-full max-w-md relative">
+          <button onClick={onClose} className="absolute top-4 right-4 text-white/50 hover:text-white transition-colors">✕</button>
+          
+          <h2 className="text-2xl font-black text-white mb-2">Verify Your Account</h2>
+          <p className="text-white/60 text-sm mb-6">
+            To ensure a safe marketplace, we require a valid credit card on file to list or bid. Your card will not be charged to list a motorcycle.
+          </p>
+          
+          <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'night' } }}>
+            <CheckoutForm onSuccess={onSuccess} />
+          </Elements>
+        </div>
+        
       </div>
     </div>
   );
