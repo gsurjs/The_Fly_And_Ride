@@ -1,21 +1,19 @@
-/*API route to create SetupIntent for telling stripe to securely save the user's card for future use without charging
-them right now.*/
-
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-03-25.dahlia' as any, 
-});
-
 export async function POST(req: Request) {
+  // 1. SAFE INITIALIZATION: Inside the function!
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: '2026-03-25.dahlia' as any, 
+  });
+
   try {
     const cookieStore = await cookies(); 
     
-    // 1. Authenticate the user requesting the setup intent
+    // 2. Authenticate the user requesting the setup intent
     const supabaseAuth = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -25,13 +23,13 @@ export async function POST(req: Request) {
     const { data: { user } } = await supabaseAuth.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // 2. Use Admin client for database updates to safely bypass RLS
+    // 3. Use Admin client for database updates to safely bypass RLS
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // 3. Get or create the Stripe Customer
+    // 4. Get or create the Stripe Customer
     let { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', user.id).single();
     let customerId = profile?.stripe_customer_id;
 
@@ -44,10 +42,12 @@ export async function POST(req: Request) {
       await supabaseAdmin.from('profiles').update({ stripe_customer_id: customerId }).eq('id', user.id);
     }
 
-    // 4. Create the SetupIntent
+    // 5. Create the SetupIntent
     const setupIntent = await stripe.setupIntents.create({
       customer: customerId,
       payment_method_types: ['card'],
+      
+      // Tell Stripe we are going to charge this card later without the user present
       usage: 'off_session',
     });
 
