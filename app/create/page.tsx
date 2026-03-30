@@ -726,6 +726,16 @@ export default function CreateListing() {
           </div>
         </form>
       </div>
+
+      {isVerificationModalOpen && (
+        <StripeVerificationModal 
+          onClose={() => setIsVerificationModalOpen(false)} 
+          onSuccess={() => {
+            setIsVerificationModalOpen(false);
+            alert("Payment method verified! You can now submit your listing.");
+          }} 
+        />
+      )}
     </main>
   );
 }
