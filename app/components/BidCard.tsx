@@ -174,7 +174,8 @@ export default function BidCard({ listing }: { listing: any }) {
       body: JSON.stringify({
         bidderId: user.id,
         bidAmount: numericBid,
-        stripeCustomerId: userProfile.stripe_customer_id
+        stripeCustomerId: userProfile.stripe_customer_id,
+        listingId: listing.id
       })
     });
 
