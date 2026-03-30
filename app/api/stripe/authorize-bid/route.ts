@@ -19,7 +19,24 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Calculate the 5% buyer's fee with Min/Max Caps
+    // 2. Fetch the customer's securely saved cards from Stripe
+    const paymentMethods = await stripe.paymentMethods.list({
+      customer: stripeCustomerId,
+      type: 'card',
+    });
+
+    // Check if they actually have a card on file
+    if (!paymentMethods.data || paymentMethods.data.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'No saved payment method found. Please verify a card first.' }, 
+        { status: 400 }
+      );
+    }
+
+    // Grab the ID of their most recently used/saved card
+    const paymentMethodId = paymentMethods.data[0].id;
+
+    // 3. Calculate the 5% buyer's fee with Min/Max Caps
     const BUYERS_FEE_PERCENTAGE = 0.05;
     const MIN_FEE_USD = 250;
     const MAX_FEE_USD = 5000;
@@ -36,13 +53,16 @@ export async function POST(request: Request) {
     // STRIPE RULE: Amounts must be in cents to process the charge
     const amountInCents = Math.round(buyersFee * 100);
 
-    // 3. Create the PaymentIntent to place the hold
+    // 4. Create the PaymentIntent to place the hold
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amountInCents,
       currency: 'usd',
       customer: stripeCustomerId,
       
-      // THE MAGIC LINE: Authorize the funds but DO NOT capture them yet.
+      // Explicitly tell Stripe which card to put the hold on
+      payment_method: paymentMethodId,
+      
+      // Authorize the funds but DO NOT capture them yet.
       capture_method: 'manual', 
       
       // Automatically attempt to confirm the hold using their saved default card
@@ -58,7 +78,7 @@ export async function POST(request: Request) {
       },
     });
 
-    // 4. Return the ID back to the frontend to save in your Supabase 'bids' table
+    // 5. Return the ID back to the frontend to save in your Supabase 'bids' table
     return NextResponse.json({ 
       success: true, 
       paymentIntentId: paymentIntent.id 
