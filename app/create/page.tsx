@@ -398,12 +398,21 @@ export default function CreateListing() {
           <p className="text-white/70 mb-8 font-medium">
             Your motorcycle has been sent to our moderation team. You will see it in your garage once approved.
           </p>
-          <button 
-            onClick={() => { router.push('/dashboard'); router.refresh(); }}
-            className="bg-[#ff5a20] hover:bg-[#ff4500] text-white font-bold py-3 px-8 rounded-full transition-colors uppercase tracking-widest"
-          >
-            Go to My Garage
-          </button>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button 
+              onClick={() => { router.push('/dashboard'); router.refresh(); }}
+              className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-8 rounded-full transition-colors uppercase tracking-widest text-sm"
+            >
+              Go to My Garage
+            </button>
+            <button 
+              onClick={resetForm}
+              className="bg-[#ff5a20] hover:bg-[#ff4500] text-white font-bold py-3 px-8 rounded-full transition-colors uppercase tracking-widest text-sm"
+            >
+              List Another Bike
+            </button>
+          </div>
         </div>
       </main>
     );
