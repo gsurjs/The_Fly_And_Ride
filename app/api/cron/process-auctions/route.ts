@@ -9,10 +9,18 @@ const supabase = createClient(
 );
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { 
-  apiVersion: '2026-03-25.dahlia' 
+  apiVersion: '2026-03-25.dahlia' as any // Explicit cast to prevent TS errors on custom version strings
 });
 
-export async function GET(req: Request) {
+export async function POST(req: Request) {
+  // --- SECURITY CHECK ---
+  // Ensure this request is actually coming from our GitHub Action
+  const authHeader = req.headers.get('authorization');
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    console.error('Unauthorized cron attempt');
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   // 1. Find all auctions that have ended but haven't been processed yet
   const now = new Date().toISOString();
   const { data: endedListings } = await supabase

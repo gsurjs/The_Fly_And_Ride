@@ -1,0 +1,21 @@
+name: Hourly API Ping
+
+on:
+  schedule:
+    # This cron expression runs the job at minute 0 past every hour
+    - cron: '0 * * * *'
+  # trigger the action manually from the GitHub UI for testing
+  workflow_dispatch: 
+
+jobs:
+  ping-api:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping the Supabase/Next.js endpoint
+        env:
+          # Optional: If your API route needs a secret key to prevent random people from triggering it
+          API_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -X POST https://theyflyandride.com/api/cron/process-auctions \
+          -H "Authorization: Bearer $API_SECRET" \
+          -H "Content-Type: application/json"
