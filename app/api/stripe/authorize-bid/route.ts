@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
-// Initialize Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-03-25.dahlia', // Use your current Stripe API version
-});
-
 export async function POST(request: Request) {
+  // 1. Move the initialization INSIDE the POST function
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: '2026-03-25.dahlia' as any, 
+  });
+  
   try {
     const body = await request.json();
     const { bidderId, bidAmount, stripeCustomerId } = body;
