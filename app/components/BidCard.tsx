@@ -80,22 +80,22 @@ export default function BidCard({ listing }: { listing: any }) {
     }
   }, [listing.id]);
 
+  const fetchUserAndWatchlist = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setCurrentUser(user); 
+    
+    if (user) {
+      // Fetch their profile to check Stripe status
+      const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+      setUserProfile(profile);
+
+      const { data } = await supabase.from('watchlist').select('id').eq('user_id', user.id).eq('listing_id', listing.id).single();
+      if (data) setIsWatchlisted(true);
+    }
+  }, [listing.id]);
+
   useEffect(() => {
     fetchBids(); 
-
-    const fetchUserAndWatchlist = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUser(user); 
-      
-      if (user) {
-    // Fetch their profile to check Stripe status
-    const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-    setUserProfile(profile);
-
-    const { data } = await supabase.from('watchlist').select('id').eq('user_id', user.id).eq('listing_id', listing.id).single();
-    if (data) setIsWatchlisted(true);
-  }
-};
     fetchUserAndWatchlist();
 
     const timer = setInterval(() => {
@@ -127,7 +127,7 @@ export default function BidCard({ listing }: { listing: any }) {
       clearInterval(timer);
       supabase.removeChannel(channel);
     };
-  }, [listing.ends_at, listing.id, fetchBids]);
+  }, [listing.ends_at, listing.id, fetchBids, fetchUserAndWatchlist]);
 
   const handlePlaceBid = async () => {
     setErrorMsg('');
@@ -148,7 +148,6 @@ export default function BidCard({ listing }: { listing: any }) {
     }
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
     if (authError || !user) {
       alert("You must be logged in to place a bid.");
       window.location.href = '/login';
@@ -161,9 +160,45 @@ export default function BidCard({ listing }: { listing: any }) {
       return;
     }
 
-    const { error } = await supabase.from('bids').insert([{ listing_id: listing.id, amount: numericBid, bidder_id: user.id }]);
+    /* Stripe Logic for Verification */
+    if (!userProfile?.has_payment_method) {
+      setIsVerificationModalOpen(true);
+      setIsBidding(false);
+      return;
+    }
+
+    // Authorize the 5% buyer hold via API route
+    const stripeRes = await fetch('/api/stripe/authorize-bid', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        bidderId: user.id,
+        bidAmount: numericBid,
+        stripeCustomerId: userProfile.stripe_customer_id
+      })
+    });
+
+    const stripeData = await stripeRes.json();
+  
+    if (!stripeData.success) {
+      setErrorMsg(`Payment Verification Failed: ${stripeData.error}`);
+      setIsBidding(false);
+      return;
+    }
+
+    // end of stripe logic
+
+
+    // Update insert to include the payment_intent_id
+    const { error } = await supabase.from('bids').insert([{ 
+      listing_id: listing.id, 
+      amount: numericBid, 
+      bidder_id: user.id,
+      payment_intent_id: stripeData.paymentIntentId 
+    }]);
 
     if (error) {
+      // If Supabase fails, you ideally want to cancel the Stripe hold here
       setErrorMsg("Transaction failed. Please try again.");
     } else {
       setSuccessMsg("Bid placed successfully!");
@@ -237,7 +272,6 @@ export default function BidCard({ listing }: { listing: any }) {
   };
 
   // Dynamic Data Array
-  // This maps the database columns to the UI tiles, and ONLY shows tiles that the seller actually filled out!
   const rawDetails = [
     { id: 'Highlights', title: 'Highlights', content: listing.highlights },
     { id: 'Equipment', title: 'Equipment', content: listing.equipment },
@@ -508,6 +542,17 @@ export default function BidCard({ listing }: { listing: any }) {
           </button>
           <img src={activeImage} alt={`${listing.make} Full View`} className="max-w-full max-h-full object-contain shadow-2xl rounded-lg" />
         </div>
+      )}
+
+      {isVerificationModalOpen && (
+        <StripeVerificationModal 
+          onClose={() => setIsVerificationModalOpen(false)} 
+          onSuccess={() => {
+            setIsVerificationModalOpen(false);
+            fetchUserAndWatchlist(); // Refresh to get has_payment_method = true
+            alert("Card verified! You can now place your bid.");
+          }} 
+        />
       )}
     </div>
   );
