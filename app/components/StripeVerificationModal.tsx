@@ -27,8 +27,13 @@ function CheckoutForm({ onSuccess }: { onSuccess: () => void }) {
     if (error) {
       alert(error.message);
     } else {
-      // Mark as verified in Supabase
-      onSuccess(); 
+      // Tell Supabase that the card was added successfully!
+      try {
+        await fetch('/api/stripe/confirm-setup', { method: 'POST' });
+        onSuccess(); // Close the modal and let them bid!
+      } catch (err) {
+        alert("Failed to update profile. Please try again.");
+      }
     }
     setLoading(false);
   };
