@@ -36,6 +36,7 @@ async function BrowseContent({ searchParamsPromise }: { searchParamsPromise: Pro
   let query = supabase
     .from('listings')
     .select('*, bids(amount)')
+    .eq('status', 'active')
     .gt('ends_at', now); // Only show active auctions
 
   // Apply Filters
