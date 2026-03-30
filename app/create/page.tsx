@@ -272,6 +272,10 @@ export default function CreateListing() {
 
     const { data: profile } = await supabase.from('profiles').select('has_payment_method').eq('id', user.id).single();
 
+    console.log("=== DEBUG STRIPE CHECK ===");
+    console.log("Raw Profile Data from DB:", profile);
+    console.log("Is JS reading it as true?:", !!profile?.has_payment_method);
+
     if (!profile?.has_payment_method) {
       setIsVerificationModalOpen(true);
       setLoading(false);
