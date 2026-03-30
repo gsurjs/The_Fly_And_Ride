@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import Link from 'next/link';
+import StripeVerificationModal from './StripeVerificationModal';
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,6 +10,10 @@ const supabase = createBrowserClient(
 );
 
 export default function BidCard({ listing }: { listing: any }) {
+
+  const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
+
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [timeLeft, setTimeLeft] = useState('Calculating...');
   const [currentBid, setCurrentBid] = useState(listing.reserve_price || 0);
@@ -83,10 +88,14 @@ export default function BidCard({ listing }: { listing: any }) {
       setCurrentUser(user); 
       
       if (user) {
-        const { data } = await supabase.from('watchlist').select('id').eq('user_id', user.id).eq('listing_id', listing.id).single();
-        if (data) setIsWatchlisted(true);
-      }
-    };
+    // Fetch their profile to check Stripe status
+    const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+    setUserProfile(profile);
+
+    const { data } = await supabase.from('watchlist').select('id').eq('user_id', user.id).eq('listing_id', listing.id).single();
+    if (data) setIsWatchlisted(true);
+  }
+};
     fetchUserAndWatchlist();
 
     const timer = setInterval(() => {
