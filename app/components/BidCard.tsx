@@ -405,13 +405,21 @@ export default function BidCard({ listing }: { listing: any }) {
               {isSold && (
                 <div className="text-center py-4 bg-green-500/20 rounded-xl mt-2 mb-6">
                   <p className="text-green-400 font-extrabold tracking-tight mb-1 text-sm sm:text-base">SOLD TO {bidHistory[0]?.username}</p>
-                  <p className="text-white/60 text-[10px] sm:text-xs font-semibold">The seller will contact the winner.</p>
+                  <div className="flex items-center justify-center gap-2 mt-2">
+                    <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                    <p className="text-green-400/80 text-[10px] sm:text-xs font-bold uppercase tracking-widest">Processing Transaction...</p>
+                  </div>
+                  <p className="text-white/50 text-[10px] sm:text-xs font-medium mt-2">The seller will contact the winner shortly.</p>
                 </div>
               )}
               {reserveNotMet && (
                 <div className="text-center py-4 bg-red-500/20 rounded-xl mt-2 mb-6">
                   <p className="text-red-400 font-extrabold tracking-tight mb-1 text-sm sm:text-base">RESERVE NOT MET</p>
-                  <p className="text-white/60 text-[10px] sm:text-xs font-semibold">The highest bid fell short.</p>
+                  <div className="flex items-center justify-center gap-2 mt-2">
+                    <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse"></span>
+                    <p className="text-red-400/80 text-[10px] sm:text-xs font-bold uppercase tracking-widest">Releasing Funds...</p>
+                  </div>
+                  <p className="text-white/50 text-[10px] sm:text-xs font-medium mt-2">The highest bid fell short. Holds are being released.</p>
                 </div>
               )}
 
