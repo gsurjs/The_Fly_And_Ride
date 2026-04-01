@@ -16,6 +16,6 @@ jobs:
           # Optional: If your API route needs a secret key to prevent random people from triggering it
           API_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          curl -X POST https://theyflyandride.com/api/cron/process-auctions \
+          curl -X POST https://www.theflyandride.com/api/cron/process-auctions \
           -H "Authorization: Bearer $API_SECRET" \
           -H "Content-Type: application/json"
