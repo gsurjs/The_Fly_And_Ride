@@ -31,7 +31,7 @@ export async function POST(req: Request) {
       .from('listings')
       .select('*')
       .lt('ends_at', now)
-      .eq('status', 'live'); // Assuming 'live' is active status
+      .eq('status', 'active');
 
     if (fetchError) throw fetchError;
 
