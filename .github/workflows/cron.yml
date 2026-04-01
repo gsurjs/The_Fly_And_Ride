@@ -3,7 +3,7 @@ name: Hourly API Ping
 on:
   schedule:
     # This cron expression runs the job at minute 0 past every hour
-    - cron: '0 * * * *'
+    - cron: '*/5 * * * *' # upgrading actions to every 5 minutes
   # trigger the action manually from the GitHub UI for testing
   workflow_dispatch: 
 
